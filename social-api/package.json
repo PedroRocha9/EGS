@@ -1,0 +1,17 @@
+{
+  "name": "social-api",
+  "version": "1.0.0",
+  "description": "API used for MIXIT to retrieve information about the users, content, etc",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "express"
+  ],
+  "author": "André Clérigo",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
