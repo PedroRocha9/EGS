@@ -1,0 +1,25 @@
+-> Login and get token
+curl -i -H "Content-Type: application/json" -X POST -d '{"email": "pingodoce@example.com", "password": "password123"}' http://localhost:5000/login
+
+-> Get profile with token
+curl -i -H "Authorization: <token>" -X GET http://localhost:5000/profile
+
+-> Get info of an ad
+curl -i -X GET http://localhost:5000/analytics/<ad_id>
+
+-> Track an event of impression
+curl -i -H "Content-Type: application/json" -X POST -d '{"event": "impressions", "ad_id":"2"}' http://localhost:5000/track
+
+-> Track an event of click
+curl -i -H "Content-Type: application/json" -X POST -d '{"event": "clicks", "ad_id":"1"}' http://localhost:5000/track
+
+-> Get all ads
+curl -i -X GET http://localhost:5000/ads
+
+-> Get all ads with params
+curl -i -X GET 'http://localhost:5000/ads?location=Portugal&age_range=18-35'
+
+
+
+
+

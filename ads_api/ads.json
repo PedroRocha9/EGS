@@ -1,0 +1,41 @@
+{
+    "ads": [
+      {
+        "id": 1,
+        "ad_type": "image",
+        "pricing_model": "cost-per-click",
+        "target_audience": {
+          "age_range": "18-35",
+          "location": "Portugal"
+        },
+        "ad_creative": "https://example.com/image1.jpg",
+        "impressions": 0,
+        "clicks": 23
+      },
+      {
+        "id": 2,
+        "ad_type": "video",
+        "pricing_model": "cost-per-impression",
+        "target_audience": {
+          "age_range": "18-35",
+          "location": "France"
+        },
+        "ad_creative": "https://example.com/video1.mp4",
+        "impressions": 1000,
+        "clicks": 0
+      },
+      {
+        "id": 3,
+        "ad_type": "image",
+        "pricing_model": "cost-per-click",
+        "target_audience": {
+          "age_range": "25-50",
+          "location": "Spain"
+        },
+        "ad_creative": "https://example.com/image2.jpg",
+        "impressions": 0,
+        "clicks": 10
+      }
+    ]
+  }
+  
