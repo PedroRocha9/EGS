@@ -2,8 +2,31 @@ from flask import Flask, jsonify, request
 from uuid import uuid4
 import json
 import hashlib
+from flask_swagger_ui import get_swaggerui_blueprint
+
+SWAGGER_URL = '/api/docs'  # URL for exposing Swagger UI (without trailing '/')
+API_URL = '/static/swagger.json'  # Our API url (can of course be a local resource)
 
 app = Flask(__name__)
+
+# Call factory function to create our blueprint
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,  # Swagger UI static files will be mapped to '{SWAGGER_URL}/dist/'
+    API_URL,
+    config={  # Swagger UI config overrides
+        'app_name': "Advertisement service"
+    },
+    # oauth_config={  # OAuth config. See https://github.com/swagger-api/swagger-ui#oauth2-configuration .
+    #    'clientId': "your-client-id",
+    #    'clientSecret': "your-client-secret-if-required",
+    #    'realm': "your-realms",
+    #    'appName': "your-app-name",
+    #    'scopeSeparator': " ",
+    #    'additionalQueryStringParams': {'test': "hello"}
+    # }
+)
+
+app.register_blueprint(swaggerui_blueprint)
 
 #Dummy data
 with open('ads.json', 'r') as f:
@@ -54,7 +77,7 @@ def login():
             token = hashlib.sha256(str(advertiser['id']).encode('utf-8')).hexdigest()
             return jsonify({'token': token}), 200
     
-    return jsonify({'message': 'Invalid email or password'}), 400
+    return jsonify({'message': 'Invalid email or password'}), 401
 
 #Endpoint to get the advertiser profile and their ads
 @app.route('/profile', methods=['GET'])
@@ -62,7 +85,7 @@ def get_profile():
     token = request.headers.get('Authorization')
     if token is None:
         return jsonify({'message': 'Missing token'}), 400
-    print(token)
+    token = token.split(' ')[1]
     for advertiser in advertisers:
         if hashlib.sha256(str(advertiser['id']).encode('utf-8')).hexdigest() == token:
             advertiser_ads = []
@@ -86,8 +109,9 @@ def create_ad():
     if token is None:
         return jsonify({'message': 'Missing token'}), 400
     data = request.get_json()
+    token = token.split(' ')[1]
     #validate data
-    if 'ad_type' not in data or 'pricing_model' not in data or 'target_audience' not in data or 'ad_creative' not in data:
+    if 'ad_type' not in data or 'pricing_model' not in data or 'target_audience' not in data or 'ad_creative' not in data or 'description' not in data:
         return jsonify({'message': 'Missing required data'}), 400
     for advertiser in advertisers:
         if hashlib.sha256(str(advertiser['id']).encode('utf-8')).hexdigest() == token:
@@ -95,6 +119,7 @@ def create_ad():
             new_ad = {
                 'id': new_id,
                 'ad_type': data['ad_type'],
+                'description': data['description'],
                 'pricing_model': data['pricing_model'],
                 'target_audience': data['target_audience'],
                 'ad_creative': data['ad_creative'],
@@ -118,6 +143,7 @@ def get_analytics(ad_id):
             return jsonify({
                 'ad_id': ad['id'],
                 'ad_type': ad['ad_type'],
+                'description': ad['description'],
                 'pricing_model': ad['pricing_model'],
                 'target_audience': ad['target_audience'],
                 'ad_creative': ad['ad_creative'],

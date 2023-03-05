@@ -1,0 +1,467 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Advertisement Service - OpenAPI 3.0",
+    "description": "This is the documentation for the advertisement service developed as part of a bigger project for the class EGS.",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "1.0.11"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "tags": [
+    {
+      "name": "ads",
+      "description": "Register / information about advertisements on the platform"
+    },
+    {
+      "name": "advertisers",
+      "description": "Register, authenticate and profile of an advertiser on the platform"
+    },
+    {
+      "name": "analytics",
+      "description": "Tracking of impressions and clicks of an advertisement"
+    }
+  ],
+  "paths": {
+    "/ads": {
+      "get": {
+        "tags": [
+          "ads"
+        ],
+        "summary": "Get ads based on filtering",
+        "description": "Get existing ads by entering optional parameters",
+        "operationId": "get_ads",
+        "parameters": [
+          {
+            "name": "location",
+            "in": "query",
+            "description": "The targetting location for the ad",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "age_range",
+            "in": "query",
+            "description": "The targetting age range (youth, adults or seniors)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ads"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No ads found"
+          }
+        }
+      }
+    },
+    "/advertisers": {
+      "post": {
+        "tags": [
+          "advertisers"
+        ],
+        "summary": "Registers a new advertiser",
+        "description": "Registers a new advertiser on the platform",
+        "operationId": "create_advertisers",
+        "requestBody": {
+          "content": {
+            "aplication/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Pingo doce"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "pingodoce@example.com"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful, returns ID of advertiser",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": 2
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error, missing data or existing email"
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "tags": [
+          "advertisers"
+        ],
+        "summary": "Authenticate an advertiser",
+        "description": "Login and authenticate an advertiser on the platform",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "pingodoce@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "example": "abc123"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "401": {
+            "description": "Invalid authentication"
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "tags": [
+          "advertisers"
+        ],
+        "summary": "Get the information about an advertiser",
+        "description": "Returns information about an advertiser (name, email) and the ads associated with them",
+        "operationId": "get_profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "advertiser_id": {
+                      "type": "string",
+                      "example": "111"
+                    },
+                    "name": {
+                      "type": "string",
+                      "example": "Pingo Doce"
+                    },
+                    "email": {
+                      "type": "string",
+                      "example": "pingodoce@example.com"
+                    },
+                    "ads": {
+                      "$ref": "#/components/schemas/ads"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "404": {
+            "description": "Profile not found"
+          }
+        }
+      }
+    },
+    "/new_ad": {
+      "post": {
+        "tags": [
+          "ads"
+        ],
+        "summary": "Upload a new ad to the platform",
+        "description": "Upload a new ad to the platform associated with an advertiser",
+        "operationId": "create_ad",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ad_type": {
+                    "type": "string",
+                    "example": "image"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Pingo Doce for the youth"
+                  },
+                  "pricing_model": {
+                    "type": "string",
+                    "example": "cost-per-clicks"
+                  },
+                  "target_audience": {
+                    "$ref": "#/components/schemas/target_audience"
+                  },
+                  "ad_creative": {
+                    "type": "string",
+                    "example": "https://example.com/pingodoce/ad2.jpg"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Invalid request data"
+          }
+        }
+      }
+    },
+    "/analytics/{ad_id}": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Get the analytics of an advertisement",
+        "description": "Returns information about the performance of an advertisement given it's *ad_id*",
+        "operationId": "get_analytics",
+        "parameters": [
+          {
+            "name": "ad_id",
+            "in": "path",
+            "description": "The advertisement id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "example": 2
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ad"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "404": {
+            "description": "Ad not found"
+          }
+        }
+      }
+    },
+    "/track": {
+      "post": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Update the analytics of an advertisement",
+        "description": "Update the number of impressions or clicks of an advertisement based on it's pricing model. For example, if the pricing model is cost-per-impression, this request will increment the number of impressions of that advertisement.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ad_id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 2
+                  },
+                  "event": {
+                    "type": "string",
+                    "example": "impression"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid request data/event"
+          },
+          "404": {
+            "description": "Ad not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ad": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 3
+          },
+          "description": {
+            "type": "string",
+            "example": "Pingo doce for the youth"
+          },
+          "ad_type": {
+            "type": "string",
+            "example": "image"
+          },
+          "pricing_model": {
+            "type": "string",
+            "example": "cost-per-click"
+          },
+          "impressions": {
+            "type": "integer",
+            "format": "int64",
+            "example": 0
+          },
+          "clicks": {
+            "type": "integer",
+            "format": "int64",
+            "example": 10
+          },
+          "ad_creative": {
+            "type": "string",
+            "example": "https://example.com/pingodoce/ad2.jpg"
+          },
+          "target_audience": {
+            "$ref": "#/components/schemas/target_audience"
+          }
+        }
+      },
+      "ads": {
+        "required": [
+          "ads"
+        ],
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ad"
+        }
+      },
+      "target_audience": {
+        "required": [
+          "ads"
+        ],
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "example": "portugal"
+          },
+          "age_range": {
+            "type": "string",
+            "example": "youth"
+          }
+        }
+      },
+      "advertiser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 10
+          },
+          "name": {
+            "type": "string",
+            "example": "Pingo Doce"
+          },
+          "email": {
+            "type": "string",
+            "example": "pingodoce@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          },
+          "ads": {
+            "$ref": "#/components/schemas/ads"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
