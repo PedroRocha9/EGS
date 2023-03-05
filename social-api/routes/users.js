@@ -95,7 +95,7 @@ const { handleUserResponse } = require('../responses');
  *                          detail: "One or more parameters to your request were invalid."
  */
 router.get("/:uuid", async (req, res) => {
-    await handleUserResponse(req, res);
+  await handleUserResponse(req, res, "uuid");
 });
 
 /**
@@ -190,7 +190,7 @@ router.get("/:uuid", async (req, res) => {
  *                          detail: "One or more parameters to your request were invalid."
  */
 router.get("/by/username/:username", async (req, res) => {
-    await handleUserResponse(req, res);
+  await handleUserResponse(req, res, "username");
 });
 
 module.exports = router;
