@@ -1,3 +1,62 @@
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - uuid
+        - name
+        - username
+        - external_information
+      properties:
+        uuid:
+          type: string
+          description: Unique identifier of this user. This is returned as a string in order to avoid complications with languages and tools that cannot handle large integers.
+        name:
+          type: string
+          description: Name displayed on user's profile in mixit
+        username:
+          type: string
+          description: The mixit handler of this user which is also unique.
+        created_at:
+          type: string
+          description: Creation time of this account. To return this field, add user.fields=created_at in the request's query parameter.
+        location:
+          type: string
+          description: The location specified in the user's registration. As this is a user input, it may not indicate a valid location. To return this field, add user.fields=location in the request's query parameter.
+        public_metrics:
+          type: object
+          $ref: '#/components/schemas/user_metrics'
+          description: Contains details about activity for this user. To return this field, add user.fields=public_metrics in the request's query parameter.
+        external_information:
+          type: object
+          $ref: '#/components/schemas/user_ext_info'
+          description: Contains details the user's identification on other platforms. To return this field, add user.fields=external_information in the request's query parameter.
+        errors:
+          type:	object
+          description: Contains details about errors that affected any of the requested users.
+          
+    user_metrics:
+      type: object
+      properties:
+        followers_count:
+          type:	number
+          description:	Number of users who follow this user.
+        following_count:
+          type: number
+          description: Number of users this user is following.
+
+    user_ext_info:
+      type: object
+      properties:
+        twitter_name:
+          type: string
+          description: The friendly name of this user, as shown on their profile.
+        twitter_username:
+          type: string
+          description: The Twitter handle (screen name) of this user.
+
 tags:
   - name: Users
-    description: user
+    description: User information
+  - name: Posts
+    description: Post

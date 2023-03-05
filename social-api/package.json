@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "devStart": "nodemon index.js"
+    "dev": "nodemon index.js"
   },
   "keywords": [
     "express"
@@ -20,6 +20,6 @@
     "swagger-ui-express": "^4.6.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.19"
+    "nodemon": "^2.0.21"
   }
 }
