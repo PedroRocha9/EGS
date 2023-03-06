@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { handleUserResponse } = require('../responses');
+const { handleUserResponse, userFollowHandler } = require('../responses');
 
 
 /**
@@ -15,11 +15,12 @@ const { handleUserResponse } = require('../responses');
  *            schema:
  *              type: string
  *            required: true
+ *            description: The UID of the user in mixit platform
  *          - in: query
  *            name: user.fields
  *            schema:
  *              type: string
- *            description: The UID of the user in mixit platform
+ *            description: The fields can be location, created_at, public_metrics, and must be separated by commas. Make sure to not include a space between commas and fields.
  *      responses:
  *          200:
  *              description: A User Object
@@ -34,7 +35,7 @@ const { handleUserResponse } = require('../responses');
  *                              value:
  *                                  data:
  *                                      name: "André Clérigo"
- *                                      uuid: "1128339639209811969"
+ *                                      uuid: "123456789123456789"
  *                                      username: "mrmaster"
  *                                      created_at: "2019-05-14T16:41:48.000Z"
  *                                      location: "Portugal"
@@ -42,6 +43,7 @@ const { handleUserResponse } = require('../responses');
  *                                          followers_count: 144
  *                                          following_count: 125
  *                                      external_information:
+ *                                          id: "1128339639209811969"
  *                                          twitter_name: "André"
  *                                          twitter_username: "mrmaster__"
  *                          UserNotFound:
@@ -95,7 +97,7 @@ const { handleUserResponse } = require('../responses');
  *                          detail: "One or more parameters to your request were invalid."
  */
 router.get("/:uuid", async (req, res) => {
-  await handleUserResponse(req, res, "uuid");
+  await handleUserResponse(req, res);
 });
 
 /**
@@ -110,11 +112,13 @@ router.get("/:uuid", async (req, res) => {
  *            schema:
  *              type: string
  *            required: true
+ *            description: The username of the user in mixit platform
  *          - in: query
  *            name: user.fields
  *            schema:
  *              type: string
- *            description: The UID of the user in mixit platform
+ *            description: The fields can be location, created_at, public_metrics, and must be separated by commas. Make sure to not include a space between commas and fields.
+ *            
  *      responses:
  *          200:
  *              description: A User Object
@@ -129,7 +133,7 @@ router.get("/:uuid", async (req, res) => {
  *                              value:
  *                                  data:
  *                                      name: "André Clérigo"
- *                                      uuid: "1128339639209811969"
+ *                                      uuid: "123456789123456789"
  *                                      username: "mrmaster"
  *                                      created_at: "2019-05-14T16:41:48.000Z"
  *                                      location: "Portugal"
@@ -137,6 +141,7 @@ router.get("/:uuid", async (req, res) => {
  *                                          followers_count: 144
  *                                          following_count: 125
  *                                      external_information:
+ *                                          id: "1128339639209811969"
  *                                          twitter_name: "André"
  *                                          twitter_username: "mrmaster__"
  *                          UserNotFound:
@@ -190,7 +195,43 @@ router.get("/:uuid", async (req, res) => {
  *                          detail: "One or more parameters to your request were invalid."
  */
 router.get("/by/username/:username", async (req, res) => {
-  await handleUserResponse(req, res, "username");
+  await handleUserResponse(req, res);
+});
+
+/**
+ * @swagger
+ * /v1/users/{uuid}/followers:
+ *  get:
+ *      summary: Returns a variety of information about a single user specified by the requested username.
+ *      tags: [Users]
+ *      parameters:
+ *          - in: path
+ *            name: uuid
+ *            schema:
+ *              type: string
+ *            required: true
+ *            description: The UID of the user in mixit platform
+ */
+router.get("/:uuid/followers", async (req, res) => {
+  await userFollowHandler(req, res, "followers");
+});
+
+/**
+ * @swagger
+ * /v1/users/{uuid}/following:
+ *  get:
+ *      summary: Returns a variety of information about a single user specified by the requested username.
+ *      tags: [Users]
+ *      parameters:
+ *          - in: path
+ *            name: uuid
+ *            schema:
+ *              type: string
+ *            required: true
+ *            description: The UID of the user in mixit platform
+ */
+router.get("/:uuid/following", async (req, res) => {
+  await userFollowHandler(req, res, "following");
 });
 
 module.exports = router;

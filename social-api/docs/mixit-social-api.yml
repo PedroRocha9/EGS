@@ -38,9 +38,12 @@ components:
     user_metrics:
       type: object
       properties:
+        id:
+          type: string
+          description: The ID of the user on twitter.
         followers_count:
           type:	number
-          description:	Number of users who follow this user.
+          description: Number of users who follow this user.
         following_count:
           type: number
           description: Number of users this user is following.

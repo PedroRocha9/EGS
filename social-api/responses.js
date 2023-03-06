@@ -1,6 +1,9 @@
 const { MongoClient } = require("mongodb");
+const { TwitterApi } = require("twitter-api-v2");
+require('dotenv').config();
 
-const fetchUserFromDatabase = async (collectionName, param, paramValue) => {
+
+const fetchFromDatabase = async (collectionName, param, paramValue) => {
   const client = new MongoClient("mongodb://localhost:27017");
   try {
     await client.connect();
@@ -16,64 +19,78 @@ const fetchUserFromDatabase = async (collectionName, param, paramValue) => {
   }
 };
   
-const handleUserResponse = async (req, res, param) => {
+const handleUserResponse = async (req, res) => {
   const requiredFields = ['uuid', 'username', 'name', 'external_information'];
-  const key = Object.keys(req.params)[0];
+  const param = Object.keys(req.params)[0];
 
   try {
-    // if param is username and the value doesnt match the regex ^[A-Za-z0-9_]{1,15}$, return error
-    if (param === "username" && !req.params[key].match(/^[A-Za-z0-9_]{1,15}$/)) throw new SyntaxError("Invalid username");
-
-    // if param is uuid and the value contains letters, return error
-    if (param === "uuid" && req.params[key].match(/[a-zA-Z]/)) throw new SyntaxError("Invalid uuid");
+    const invalidUserHandlerResult = await invalidUserHandler(req, res, param);
+    if (invalidUserHandlerResult === 'response_sent') {
+      return;
+    }
     
     const queryHandlerResult = await queryHandler(req, res, ["user.fields"], {"user.fields": ["location", "created_at", "public_metrics"]});
     if (queryHandlerResult === 'response_sent') {
       return;
     }
 
-    const data = await fetchUserFromDatabase("users", param, req.params[key]);
-    // User NOT found
+    const data = await fetchFromDatabase("users", param, req.params[param]);
     if (!data) {
-      return res.status(200).json({
-        errors: [{
-          parameters: {
-            value: [req.params[key]]
-          }
-        }],
-        detail: "Could not find user with "+ key + ": [" + req.params[key] + "].",
-        title: "Not Found Error",
-        parameter: key,
-        resource_type: "user"
-      });
+      userNotFoundHandler(req, res, param);
+      return;
     }
 
-    // User found
-    const requestParams = req.query["user.fields"].split(",").concat(requiredFields);
+    const requestParams = requiredFields.concat(Object.keys(req.query).length > 0 ? req.query["user.fields"].split(",") : []);
     const filteredData = Object.fromEntries(
       Object.entries(data).filter(([key, value]) => requestParams.includes(key))
     );
 
     return res.status(200).json({ data: filteredData });
   } catch (error) {
-    console.log(error.name + ": " + error.message);   // Debugging purposes
-    
-    // UUID or Username not valid
-    if (error instanceof SyntaxError && (error.message.includes("uuid") || error.message.includes("username"))) {
-      return res.status(400).json({
-        errors: [{
-          parameters: {
-            [key]: [req.params[key]]
-          },
-          message: "The `" + key + "` query parameter value [" + req.params[key] +"] is not valid"
-        }],
-        title: "Invalid Request",
-        detail: "One or more parameters to your request was invalid.",
-      });
-    }
+    console.log(error);   // Debugging purposes
 
     return res.status(500).json({ errors: "Internal server error" });
   }
+};
+
+const invalidUserHandler = async (req, res, param) => {
+  try {
+    // if param is username and the value doesnt match the regex ^[A-Za-z0-9_]{1,15}$, return error
+    if (param === "username" && !req.params[param].match(/^[A-Za-z0-9_]{1,15}$/)) throw new Error("Invalid username");
+
+    // if param is uuid and the value contains letters, return error
+    if (param === "uuid" && req.params[param].match(/[a-zA-Z]/)) throw new Error("Invalid uuid");
+
+    return
+  } catch (error) {
+    console.log(error);   // Debugging purposes
+    res.status(400).json({
+      errors: [{
+        parameters: {
+          [param]: [req.params[param]]
+        },
+        message: "The `" + param + "` query parameter value [" + req.params[param] +"] is not valid"
+      }],
+      title: "Invalid Request",
+      detail: "One or more parameters to your request was invalid.",
+    });
+
+    return 'response_sent';
+  }
+};
+
+const userNotFoundHandler = async (req, res, param) => {
+  res.status(200).json({
+    errors: [{
+      parameters: {
+        value: [req.params[param]]
+      }
+    }],
+    detail: "Could not find user with "+ param + ": [" + req.params[param] + "].",
+    title: "Not Found Error",
+    parameter: param,
+    resource_type: "user"
+  });
 };
 
 const queryHandler = async (req, res, queryKeys, queryValues) => {
@@ -127,4 +144,36 @@ const queryHandler = async (req, res, queryKeys, queryValues) => {
   return null
 };
 
-module.exports = { handleUserResponse };  
+const userFollowHandler = async (req, res, type) => {
+  const twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
+  const readOnlyClient = twitterClient.readOnly;
+  const param = Object.keys(req.params)[0];
+
+  try {
+    const invalidUserHandlerResult = await invalidUserHandler(req, res, param);
+    if (invalidUserHandlerResult === 'response_sent') {
+      return;
+    }
+
+    const data = await fetchFromDatabase("users", param, req.params[param]);
+    if (!data) {
+      userNotFoundHandler(req, res, param);
+      return;
+    }
+
+    let followInfo;
+    if (type === "followers") {
+      followInfo = await readOnlyClient.v2.followers(data.external_information.id, { max_results: 10 });
+    } else if (type === "following") {
+      followInfo = await readOnlyClient.v2.following(data.external_information.id, { max_results: 10 });
+    }
+
+    res.status(200).json(followInfo);
+  } catch (error) {
+    console.log(error);   // Debugging purposes
+
+    return res.status(500).json({ errors: "Internal server error" });
+  }
+};
+
+module.exports = { handleUserResponse, userFollowHandler };  
