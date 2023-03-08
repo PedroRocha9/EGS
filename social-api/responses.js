@@ -44,7 +44,20 @@ const handleUserResponse = async (req, res) => {
     const filteredData = Object.fromEntries(
       Object.entries(data).filter(([key, value]) => requestParams.includes(key))
     );
-
+    
+    const twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
+    const readOnlyClient = twitterClient.readOnly;
+    const userInfo = await readOnlyClient.v2.users(data.external_information.id, { 'user.fields': 'public_metrics' });
+    filteredData.external_information["twitter_name"] = userInfo.data[0].name;
+    filteredData.external_information["twitter_username"] = userInfo.data[0].username;
+    
+    if (requestParams.includes("public_metrics")) {
+      filteredData.public_metrics = { 
+        followers_count: userInfo.data[0].public_metrics.followers_count, 
+        following_count: userInfo.data[0].public_metrics.following_count
+      };
+    }
+    
     return res.status(200).json({ data: filteredData });
   } catch (error) {
     console.log(error);   // Debugging purposes
@@ -80,7 +93,7 @@ const invalidUserHandler = async (req, res, param) => {
 };
 
 const userNotFoundHandler = async (req, res, param) => {
-  res.status(200).json({
+  res.status(404).json({
     errors: [{
       parameters: {
         value: [req.params[param]]
@@ -107,7 +120,7 @@ const queryHandler = async (req, res, queryKeys, queryValues) => {
             parameters: {
               [key]: [req.query[key]]
             },
-            message: "The query parameter [" + key +"] is not one of [user.fields]"
+            message: "The query parameter [" + key + "] is not one of [" + queryKeys + "]"
           }
         );
       } else {
@@ -161,11 +174,30 @@ const userFollowHandler = async (req, res, type) => {
       return;
     }
 
+    let max_results = 50;
+
+    if (Object.keys(req.query).length > 0) {
+      let arg = Number(req.query[Object.keys(req.query)]);
+      let queryHandlerResult;
+
+      if (isNaN(arg) || arg < 1 || arg > 100) {
+        queryHandlerResult = await queryHandler(req, res, ["max_results"], {"max_results": ["1 to 100"]});
+      } else {
+        queryHandlerResult = await queryHandler(req, res, ["max_results"], {"max_results": [String(arg)]});
+      }
+
+      if (queryHandlerResult === 'response_sent') {
+        return;
+      }
+
+      max_results = arg;
+    }
+
     let followInfo;
     if (type === "followers") {
-      followInfo = await readOnlyClient.v2.followers(data.external_information.id, { max_results: 10 });
+      followInfo = await readOnlyClient.v2.followers(data.external_information.id, { max_results: max_results });
     } else if (type === "following") {
-      followInfo = await readOnlyClient.v2.following(data.external_information.id, { max_results: 10 });
+      followInfo = await readOnlyClient.v2.following(data.external_information.id, { max_results: max_results });
     }
 
     res.status(200).json(followInfo);

@@ -27,74 +27,19 @@ const { handleUserResponse, userFollowHandler } = require('../responses');
  *              content:
  *                  application/json:
  *                      schema:
- *                          allOf:
- *                              - $ref: '#/components/schemas/User'
- *                      examples:
- *                          UserFound:
- *                              summary: User Found
- *                              value:
- *                                  data:
- *                                      name: "André Clérigo"
- *                                      uuid: "123456789123456789"
- *                                      username: "mrmaster"
- *                                      created_at: "2019-05-14T16:41:48.000Z"
- *                                      location: "Portugal"
- *                                      public_metrics:
- *                                          followers_count: 144
- *                                          following_count: 125
- *                                      external_information:
- *                                          id: "1128339639209811969"
- *                                          twitter_name: "André"
- *                                          twitter_username: "mrmaster__"
- *                          UserNotFound:
- *                              summary: User NOT Found
- *                              value:
- *                                  errors:
- *                                      - parameters:
- *                                          value: [":uuid"]
- *                                  detail: "Could not find user with username: [':uuid']."
- *                                  title: "Not Found Error"
- *                                  parameter: "uuid"
- *                                  resource_type: "user"
+ *                          $ref: '#/components/schemas/User'                            
  *          400:
  *              description: Bad request
  *              content:
  *                  application/json:
  *                      schema:
- *                          type: object
- *                          properties:
- *                              errors:
- *                                  type: array
- *                                  items:
- *                                      type: object
- *                                      properties:
- *                                          parameters:
- *                                              type: object
- *                                              properties:
- *                                                  id:
- *                                                      type: array
- *                                                      items:
- *                                                          type: string
- *                                          message:
- *                                              type: string
- *                                  required:
- *                                      - parameters
- *                                      - message
- *                              title:
- *                                  type: string
- *                              detail:
- *                                  type: string
- *                          required:
- *                              - errors
- *                              - title
- *                              - detail
- *                      example:
- *                          errors:
- *                              - parameters:
- *                                    uuid: [":uuid"]
- *                                message: "The 'uuid' query parameter value [:uuid] is not valid"
- *                          title: "Invalid Request"
- *                          detail: "One or more parameters to your request were invalid."
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: User not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'       
  */
 router.get("/:uuid", async (req, res) => {
   await handleUserResponse(req, res);
@@ -125,74 +70,19 @@ router.get("/:uuid", async (req, res) => {
  *              content:
  *                  application/json:
  *                      schema:
- *                          allOf:
- *                              - $ref: '#/components/schemas/User'
- *                      examples:
- *                          UserFound:
- *                              summary: User Found
- *                              value:
- *                                  data:
- *                                      name: "André Clérigo"
- *                                      uuid: "123456789123456789"
- *                                      username: "mrmaster"
- *                                      created_at: "2019-05-14T16:41:48.000Z"
- *                                      location: "Portugal"
- *                                      public_metrics:
- *                                          followers_count: 144
- *                                          following_count: 125
- *                                      external_information:
- *                                          id: "1128339639209811969"
- *                                          twitter_name: "André"
- *                                          twitter_username: "mrmaster__"
- *                          UserNotFound:
- *                              summary: User NOT Found
- *                              value:
- *                                  errors:
- *                                      - parameters:
- *                                          value: [":username"]
- *                                  detail: "Could not find user with username: [':username']."
- *                                  title: "Not Found Error"
- *                                  parameter: "username"
- *                                  resource_type: "user"
+ *                          $ref: '#/components/schemas/User'
  *          400:
  *              description: Bad request
  *              content:
  *                  application/json:
  *                      schema:
- *                          type: object
- *                          properties:
- *                              errors:
- *                                  type: array
- *                                  items:
- *                                      type: object
- *                                      properties:
- *                                          parameters:
- *                                              type: object
- *                                              properties:
- *                                                  id:
- *                                                      type: array
- *                                                      items:
- *                                                          type: string
- *                                          message:
- *                                              type: string
- *                                  required:
- *                                      - parameters
- *                                      - message
- *                              title:
- *                                  type: string
- *                              detail:
- *                                  type: string
- *                          required:
- *                              - errors
- *                              - title
- *                              - detail
- *                      example:
- *                          errors:
- *                              - parameters:
- *                                    username: [":username"]
- *                                message: "The 'username' query parameter value [:username] is not valid"
- *                          title: "Invalid Request"
- *                          detail: "One or more parameters to your request were invalid."
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: User not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get("/by/username/:username", async (req, res) => {
   await handleUserResponse(req, res);
@@ -202,7 +92,7 @@ router.get("/by/username/:username", async (req, res) => {
  * @swagger
  * /v1/users/{uuid}/followers:
  *  get:
- *      summary: Returns a variety of information about a single user specified by the requested username.
+ *      summary: Returns a list of users who are followers of the specified user ID (Twitter ID).
  *      tags: [Users]
  *      parameters:
  *          - in: path
@@ -211,7 +101,35 @@ router.get("/by/username/:username", async (req, res) => {
  *              type: string
  *            required: true
  *            description: The UID of the user in mixit platform
- */
+ *          - in: query
+ *            name: max_results
+ *            schema:
+ *              type: integer
+ *            description: The maximum number of results to be returned per page. This can be a number between 1 and the 100. By default, each page will return 50 results.
+ *      
+ *      responses:
+ *          200:
+ *              description: A list of users who are followers.
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                        type: array
+ *                        items:
+ *                          $ref: '#/components/schemas/FollowUser'
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ * 
+ *          404:
+ *              description: User not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
+*/
 router.get("/:uuid/followers", async (req, res) => {
   await userFollowHandler(req, res, "followers");
 });
@@ -220,7 +138,7 @@ router.get("/:uuid/followers", async (req, res) => {
  * @swagger
  * /v1/users/{uuid}/following:
  *  get:
- *      summary: Returns a variety of information about a single user specified by the requested username.
+ *      summary: Returns a list of users that the specified user ID (Twitter ID) follows.
  *      tags: [Users]
  *      parameters:
  *          - in: path
@@ -229,6 +147,33 @@ router.get("/:uuid/followers", async (req, res) => {
  *              type: string
  *            required: true
  *            description: The UID of the user in mixit platform
+ *          - in: query
+ *            name: max_results
+ *            schema:
+ *              type: integer
+ *            description: The maximum number of results to be returned per page. This can be a number between 1 and the 100. By default, each page will return 50 results.
+ *      
+ *      responses:
+ *          200:
+ *              description: A list of users who are followers.
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                        type: array
+ *                        items:
+ *                          $ref: '#/components/schemas/FollowUser'
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: User not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get("/:uuid/following", async (req, res) => {
   await userFollowHandler(req, res, "following");
