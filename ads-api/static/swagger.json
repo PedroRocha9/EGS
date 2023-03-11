@@ -20,8 +20,8 @@
       "description": "Register / information about advertisements on the platform"
     },
     {
-      "name": "advertisers",
-      "description": "Register, authenticate and profile of an advertiser on the platform"
+      "name": "users",
+      "description": "Register, authenticate and profile of an user on the platform"
     },
     {
       "name": "analytics",
@@ -29,11 +29,16 @@
     }
   ],
   "paths": {
-    "/ads": {
+    "/v1/ads": {
       "get": {
         "tags": [
           "ads"
         ],
+        "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
         "summary": "Get ads based on filtering",
         "description": "Get existing ads by entering optional parameters",
         "operationId": "get_ads",
@@ -50,7 +55,7 @@
           {
             "name": "age_range",
             "in": "query",
-            "description": "The targetting age range (youth, adults or seniors)",
+            "description": "The targetting age range ('youth', 'adults' or 'seniors')",
             "required": false,
             "schema": {
               "type": "string"
@@ -68,20 +73,75 @@
               }
             }
           },
+          "401": {
+            "description": "User not authorized"
+          },
           "404": {
             "description": "No ads found"
           }
         }
-      }
-    },
-    "/advertisers": {
+      },
       "post": {
         "tags": [
-          "advertisers"
+            "ads"
+          ],
+          "summary": "Upload a new ad to the platform",
+          "description": "Upload a new ad to the platform associated with an advertiser",
+          "operationId": "create_ad",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ad_type": {
+                      "type": "string",
+                      "example": "image"
+                    },
+                    "description": {
+                      "type": "string",
+                      "example": "Pingo Doce for the youth"
+                    },
+                    "pricing_model": {
+                      "type": "string",
+                      "example": "cost-per-clicks"
+                    },
+                    "target_audience": {
+                      "$ref": "#/components/schemas/target_audience"
+                    },
+                    "ad_creative": {
+                      "type": "string",
+                      "example": "https://example.com/pingodoce/ad2.jpg"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "400": {
+              "description": "Invalid request data"
+            },
+            "401": {
+              "description": "User not authorized"
+            }
+          }
+      }
+    },
+    "/v1/users": {
+      "post": {
+        "tags": [
+          "users"
         ],
-        "summary": "Registers a new advertiser",
-        "description": "Registers a new advertiser on the platform",
-        "operationId": "create_advertisers",
+        "summary": "Registers a new user",
+        "description": "Registers a new user (advertiser/consumer) on the platform",
+        "operationId": "create_user",
         "requestBody": {
           "content": {
             "aplication/json": {
@@ -106,7 +166,7 @@
         },
         "responses": {
           "201": {
-            "description": "Successful, returns ID of advertiser",
+            "description": "Successful, returns ID of user",
             "content": {
               "application/json": {
                 "schema": {
@@ -127,13 +187,13 @@
         }
       }
     },
-    "/login": {
+    "/v1/login": {
       "post": {
         "tags": [
-          "advertisers"
+          "users"
         ],
-        "summary": "Authenticate an advertiser",
-        "description": "Login and authenticate an advertiser on the platform",
+        "summary": "Authenticate an user",
+        "description": "Login and authenticate an user on the platform",
         "operationId": "login",
         "requestBody": {
           "content": {
@@ -175,18 +235,18 @@
             "description": "Invalid request data"
           },
           "401": {
-            "description": "Invalid authentication"
+            "description": "User not authorized"
           }
         }
       }
     },
-    "/profile": {
+    "/v1/profile": {
       "get": {
         "tags": [
-          "advertisers"
+          "users"
         ],
-        "summary": "Get the information about an advertiser",
-        "description": "Returns information about an advertiser (name, email) and the ads associated with them",
+        "summary": "Get the information about an user",
+        "description": "Returns information about an user (name, email) and the ads associated with them (if it's not a consumer)",
         "operationId": "get_profile",
         "security": [
           {
@@ -213,6 +273,10 @@
                       "type": "string",
                       "example": "pingodoce@example.com"
                     },
+                    "type" :{
+                      "type": "string",
+                      "example": "A"
+                    },
                     "ads": {
                       "$ref": "#/components/schemas/ads"
                     }
@@ -224,67 +288,24 @@
           "400": {
             "description": "Invalid request data"
           },
+          "401": {
+            "description": "User not authorized"
+          },
           "404": {
             "description": "Profile not found"
           }
         }
       }
     },
-    "/new_ad": {
-      "post": {
-        "tags": [
-          "ads"
-        ],
-        "summary": "Upload a new ad to the platform",
-        "description": "Upload a new ad to the platform associated with an advertiser",
-        "operationId": "create_ad",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ad_type": {
-                    "type": "string",
-                    "example": "image"
-                  },
-                  "description": {
-                    "type": "string",
-                    "example": "Pingo Doce for the youth"
-                  },
-                  "pricing_model": {
-                    "type": "string",
-                    "example": "cost-per-clicks"
-                  },
-                  "target_audience": {
-                    "$ref": "#/components/schemas/target_audience"
-                  },
-                  "ad_creative": {
-                    "type": "string",
-                    "example": "https://example.com/pingodoce/ad2.jpg"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "400": {
-            "description": "Invalid request data"
-          }
-        }
-      }
-    },
-    "/analytics/{ad_id}": {
+    "/v1/analytics/{ad_id}": {
       "get": {
         "tags": [
           "analytics"
+        ],
+        "security": [
+            {
+              "bearerAuth": []
+            }
         ],
         "summary": "Get the analytics of an advertisement",
         "description": "Returns information about the performance of an advertisement given it's *ad_id*",
@@ -316,16 +337,24 @@
           "400": {
             "description": "Invalid request data"
           },
+          "401": {
+            "description": "User not authorized"
+          },
           "404": {
             "description": "Ad not found"
           }
         }
       }
     },
-    "/track": {
+    "/v1/track": {
       "post": {
         "tags": [
-          "analytics"
+          "ads"
+        ],
+        "security": [
+            {
+              "bearerAuth": []
+            }
         ],
         "summary": "Update the analytics of an advertisement",
         "description": "Update the number of impressions or clicks of an advertisement based on it's pricing model. For example, if the pricing model is cost-per-impression, this request will increment the number of impressions of that advertisement.",
@@ -356,6 +385,9 @@
           },
           "400": {
             "description": "Invalid request data/event"
+          },
+          "401": {
+            "description": "User not authorized"
           },
           "404": {
             "description": "Ad not found"

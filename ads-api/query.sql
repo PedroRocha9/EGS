@@ -1,0 +1,2 @@
+use ads;
+show tables;
