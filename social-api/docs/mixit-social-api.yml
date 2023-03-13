@@ -51,9 +51,11 @@ components:
             twitter_name:
               type: string
               description: The friendly name of this user, as shown on their profile.
+              example: Andre
             twitter_username:
               type: string
               description: The Twitter handle (screen name) of this user.
+              example: mrmaster__
 
     FollowUser:
       type: object

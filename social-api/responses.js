@@ -1,27 +1,37 @@
 const { MongoClient } = require("mongodb");
-const { TwitterApi } = require("twitter-api-v2");
+const { publishMessage, fetchFromCache } = require("./cache");
 require('dotenv').config();
 
 
-const fetchFromDatabase = async (collectionName, param, paramValue) => {
-  const client = new MongoClient("mongodb://localhost:27017");
+const fetchFromDatabase = async (collectionName, param, paramValue, dbQuery) => {
+  const mongoClient = new MongoClient("mongodb://localhost:27017");
+  
   try {
-    await client.connect();
-    const database = client.db("mixit");
+    await mongoClient.connect();
+    const database = mongoClient.db("mixit");
     const collection = database.collection(collectionName);
-    const data = await collection.findOne({ [param]: paramValue });
+    let data = await collection.findOne({ [param]: paramValue });
+    
+    if (data) {
+      // Filtering for database local fields
+      data = Object.fromEntries(
+        Object.entries(data).filter(([key, value]) => dbQuery.includes(key))
+      );
+    }
+
     return data;
   } catch (error) {
     console.error(error);     // Debugging purposes
     throw new Error("Failed to fetch data from database");
   } finally {
-    await client.close();
+    await mongoClient.close();    
   }
 };
   
 const handleUserResponse = async (req, res) => {
   const requiredFields = ['uuid', 'username', 'name', 'external_information'];
   const param = Object.keys(req.params)[0];
+  const query = req.query;
 
   try {
     const invalidUserHandlerResult = await invalidUserHandler(req, res, param);
@@ -34,31 +44,36 @@ const handleUserResponse = async (req, res) => {
       return;
     }
 
-    const data = await fetchFromDatabase("users", param, req.params[param]);
+    let dbQuery = requiredFields;
+    let cacheQuery = [];
+
+    if (Object.keys(query).length > 0) {
+      query["user.fields"].split(",").forEach(element => {
+        if (element === "location" || element === "created_at") {
+          dbQuery.push(element);
+        } else {
+          cacheQuery.push(element);
+        }
+      });
+    }
+
+    let data = await fetchFromDatabase("users", param, req.params[param], dbQuery, cacheQuery);
     if (!data) {
       userNotFoundHandler(req, res, param);
       return;
     }
-
-    const requestParams = requiredFields.concat(Object.keys(req.query).length > 0 ? req.query["user.fields"].split(",") : []);
-    const filteredData = Object.fromEntries(
-      Object.entries(data).filter(([key, value]) => requestParams.includes(key))
-    );
     
-    const twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
-    const readOnlyClient = twitterClient.readOnly;
-    const userInfo = await readOnlyClient.v2.users(data.external_information.id, { 'user.fields': 'public_metrics' });
-    filteredData.external_information["twitter_name"] = userInfo.data[0].name;
-    filteredData.external_information["twitter_username"] = userInfo.data[0].username;
-    
-    if (requestParams.includes("public_metrics")) {
-      filteredData.public_metrics = { 
-        followers_count: userInfo.data[0].public_metrics.followers_count, 
-        following_count: userInfo.data[0].public_metrics.following_count
-      };
+    if (cacheQuery.length > 0) {
+      publicMetricsCache = await fetchFromCache('public_metrics', data.external_information.id, { 'user.fields': 'public_metrics' });
+      data["public_metrics"] = JSON.parse(publicMetricsCache);
     }
-    
-    return res.status(200).json({ data: filteredData });
+
+    externalInfoCache = await fetchFromCache('external_information', data.external_information.id, { 'user.fields': '' });
+
+    data["external_information"]["twitter_name"] = JSON.parse(externalInfoCache).twitter_name;
+    data["external_information"]["twitter_username"] = JSON.parse(externalInfoCache).twitter_username;
+
+    return res.status(200).json({ data: data });
   } catch (error) {
     console.log(error);   // Debugging purposes
 
