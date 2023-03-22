@@ -60,25 +60,58 @@ components:
     FollowUser:
       type: object
       properties:
-        id:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier of this user. This is returned as a string in order to avoid complications with languages and tools that cannot handle large integers.
+                example: 1128339639209811969
+              name:
+                type: string
+                description: The friendly name of this user, as shown on their profile.
+                example: André Clérigo
+              username:
+                type: string
+                descripion: The Twitter handle (screen name) of this user.
+                example: mrmaster__
+              profile_image_url:
+                type: string
+                description: The Twitter's image profile url
+                example: https://pbs.twimg.com/profile_images/1586701254474043394/lM2FGOL6_normal.jpg
+        next_token:
           type: string
-          description: Unique identifier of this user. This is returned as a string in order to avoid complications with languages and tools that cannot handle large integers.
-          example: 1128339639209811969
-        name:
+          description: Pagination token for the next page of results.
+          example: 49IA8JT6H4NHEZZZ
+
+    Post:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier of the tweet. This is returned as a string in order to avoid complications with languages and tools that cannot handle large integers.
+                example: 1598729618432806913
+              text:
+                type: string
+                description: The text content of tweet itself.
+                example: Este é o meu primeiro tweet
+              photo_urls:
+                type: array
+                description: The photo urls of the tweet.
+                items:
+                  type: string
+                  example: https://pbs.twimg.com/media/EtZ2Z7tXMAA5Z5_.jpg
+        next_token:
           type: string
-          description: The friendly name of this user, as shown on their profile.
-          example: André Clérigo
-        username:
-          type: string
-          descripion: The Twitter handle (screen name) of this user.
-          example: mrmaster__
-        meta:
-          type: object
-          description: This object contains information about the number of users returned in the current request, and pagination details.
-          properties:
-            result_count:
-              type: integer
-              example: 10
+          description: Pagination token for the next page of results.
+          example: 7140dibdnow9c7btw424cf1fkc6jlfl3cyqfld29ydkxf
 
     ErrorInvalid:
       type: object
@@ -142,6 +175,37 @@ components:
           description: The type of resource that was not found.
           example: "user"
 
+    ErrorDuplicateResource:
+      type: object
+      properties:
+        errors:
+          type: object
+          properties:
+            parameters:
+              type: object
+              properties:
+                value:
+                  type: array
+                  items:
+                    type: string
+                    decription: The value of the resource identifier.
+                    example: "123456789123456789"
+        title:
+          type: string
+          description: The title of the error.
+          example: "Resource Already Exists Error"
+        detail:
+          type: string
+          description: A description with more details of the error.
+          example: "User with uuid: [12345678912345678] already registerd in the platform."
+        parameter:
+          type: string
+          description: The name of the parameter that caused the error.
+          example: "uuid"
+        resource_type:
+          type: string
+          description: The type of resource that is duplicate.
+          example: "user"
 tags:
   - name: Users
     description: User information

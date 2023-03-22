@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
 
 // Setup routes
 fs.readdir(static.ROUTES_DIR, (err, files) => {
-  files.forEach(file => app.use(`/v1/${file.replace(".js", "")}`, require(static.ROUTES_DIR + file.replace(".js", ""))))
+  files.forEach(file => app.use(`/v1/${file.replace(".js", "")}`, require(static.ROUTES_DIR + file.replace(".js", ""))));
 
   // Middleware to handle 404 when nothing else responded
   app.use((req, res, next) => {
