@@ -1,13 +1,16 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template_string, render_template
 from uuid import uuid4
 import json
 import hashlib
 from flask_swagger_ui import get_swaggerui_blueprint
+from flask_cors import CORS
+import sqlite3
 
 SWAGGER_URL = '/api/docs'  # URL for exposing Swagger UI (without trailing '/')
 API_URL = '/static/swagger.json'  # Our API url (can of course be a local resource)
 
 app = Flask(__name__)
+CORS(app)
 
 # Call factory function to create our blueprint
 swaggerui_blueprint = get_swaggerui_blueprint(
@@ -27,6 +30,10 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 )
 
 app.register_blueprint(swaggerui_blueprint)
+
+#Connect to the sqlite database
+conn = sqlite3.connect('sql/database.db')
+cur = conn.cursor()
 
 #Dummy data
 with open('ads.json', 'r') as f:
@@ -81,8 +88,7 @@ def create_user():
         "type": type,
         'name': data['name'],
         'email': data['email'],
-        'password': data['password'],
-        'ads': []
+        'password': data['password']
     }
     users.append(new_user)
     return jsonify({'id': new_id}), 201
@@ -112,16 +118,15 @@ def get_profile():
     for user in users:
         if get_token(user) == token:
             user_ads = []
-            for ad_id in user['ads']:
-                for ad in ads:
-                    if ad['id'] == ad_id:
-                        temp_ad = {
-                            'id': ad['id'],
-                            'ad_type': ad['ad_type'],
-                            'description': ad['description'],
-                            'ad_creative': ad['ad_creative'],
-                        }
-                        user_ads.append(temp_ad)
+            for ad in ads:
+                if ad['user'] == user['id']:
+                    temp_ad = {
+                        'id': ad['id'],
+                        'type': ad['type'],
+                        'description': ad['description'],
+                        'ad_creative': ad['ad_creative'],
+                    }
+                    user_ads.append(temp_ad)
             return jsonify({
                 'id': user['id'],
                 'name': user['name'],
@@ -147,62 +152,47 @@ def get_analytics(ad_id):
 
     if ad_id is None:
         return jsonify({'message': 'Missing required data'}), 400
-    for ad in ads:
-        if ad['id'] == ad_id:
-            return jsonify({
-                'ad_id': ad['id'],
-                'ad_type': ad['ad_type'],
-                'description': ad['description'],
-                'pricing_model': ad['pricing_model'],
-                'target_audience': ad['target_audience'],
-                'ad_creative': ad['ad_creative'],
-                'impressions': ad['impressions'],
-                'clicks': ad['clicks']
-            }), 200
+    
+    for user in users:
+        if get_token(user) == token:
+            for ad in ads:
+                if ad['id'] == ad_id and ad['user'] == user['id']:
+                    return jsonify({
+                        'ad_id': ad['id'],
+                        'type': ad['type'],
+                        'description': ad['description'],
+                        'pricing_model': ad['pricing_model'],
+                        'target_audience': ad['target_audience'],
+                        'ad_creative': ad['ad_creative'],
+                        'impressions': ad['impressions'],
+                        'clicks': ad['clicks'],
+                        'advertiser': ad['user']
+                    }), 200
         
     return jsonify({'message': 'Ad not found'}), 404
 
-#Endpoint to track impressions and clicks for an ad
-@app.route('/v1/track', methods=['POST'])
-def track():
-    token = request.headers.get('Authorization')
-    if token is None:
-        return jsonify({'message': 'Missing token'}), 401
-    token = token.split(' ')[1]
-
-    #check if user is consumer
-    for user in users:
-        if get_token(user) == token:
-            if user['type'] != "C":
-                return jsonify({'message': 'Advertisers not authorized'}), 401
-        data = request.get_json()
+@app.route('/v1/ads/<int:ad_id>', methods=['DELETE', 'POST'])
+def update_ad(ad_id=None):
+    if request.method == 'POST':
         #validate data
-        if 'ad_id' not in data or 'event' not in data:
+        if ad_id is None:
             return jsonify({'message': 'Missing required data'}), 400
         for ad in ads:
-            if str(ad['id']) == str(data['ad_id']):
-                if data['event'] == 'impression':
-                    ad['impressions'] += 1
-                elif data['event'] == 'click':
+            if str(ad['id']) == str(ad_id):
+                if ad['pricing_model'] == 'CPC':
                     ad['clicks'] += 1
-                else:
-                    return jsonify({'message': 'Invalid event'}), 400
                 return jsonify({'message': 'Event tracked'}), 200
 
         return jsonify({'message': 'Ad not found'}), 404
-    
-    return jsonify({'message': 'Invalid token'}), 401
+
+    return jsonify({'message': 'Not implemented'}), 501
 
 #Endpoint to get ads (location and age_range are optional)
 @app.route('/v1/ads', methods=['GET', 'POST'])
 def get_ads():
     
-    #check if the request is a post or get
+    #check if the request is a post or get or delete
     if request.method == 'POST':
-        #create a new ad
-        token = request.headers.get('Authorization')
-        if token is None:
-            return jsonify({'message': 'Missing token'}), 401
         data = request.get_json()
         token = token.split(' ')[1]
         #check if user is advertiser
@@ -211,64 +201,77 @@ def get_ads():
                 if user['type'] != "A":
                     return jsonify({'message': 'Consumers not authorized'}), 401
                 #validate data body
-                if 'ad_type' not in data or 'pricing_model' not in data or 'target_audience' not in data or 'ad_creative' not in data or 'description' not in data:
+                if 'type' not in data or 'pricing_model' not in data or 'target_audience' not in data or 'ad_creative' not in data or 'description' not in data:
                     return jsonify({'message': 'Missing required data'}), 400
                 
                 #create new ad and add it to the user's ads
                 new_id = len(ads) + 1
                 new_ad = {
                     'id': new_id,
-                    'ad_type': data['ad_type'],
+                    'type': data['type'],
                     'description': data['description'],
                     'pricing_model': data['pricing_model'],
                     'target_audience': data['target_audience'],
                     'ad_creative': data['ad_creative'],
                     "impressions": 0,
-                    "clicks": 0
+                    "clicks": 0,
+                    'user': user['id']
                 }
                 ads.append(new_ad)
-                user['ads'].append(new_id)
                 return jsonify({'id': new_id}), 201
         
         return jsonify({'message': 'Invalid token'}), 400
     
-    else:
-        #Get ads info
+    elif request.method == 'GET':
+        #Get request info
+        location = request.args.get('location')
+        age_range = request.args.get('age_range')
+        publisher_id = request.args.get('publisher_id')
+
+        if publisher_id is None:
+            return jsonify({'message': 'Missing required data'}), 400
+
+        if age_range not in age_groups and age_range:
+            return jsonify({'message': 'Invalid age range'}), 400
+
+        ads_to_return = [] 
+        for ad in ads:
+            if not location or ad['target_audience']['location'].lower() == location.lower():
+                if not age_range or ad['target_audience']['age_range'] == age_range:
+                    js_code = render_template('ad_code.html', ad_id=ad['id'], ad_creative=ad['ad_creative'], ad_description=ad['description'])
+                    ad['impressions'] += 1
+                    ads_to_return.append(js_code)
+
+        if len(ads_to_return) == 0:
+            return jsonify({'message': 'No ads found'}), 404
+        return jsonify({'ads': ads_to_return}), 200
+                
+
+    elif request.method == 'DELETE':
         token = request.headers.get('Authorization')
         if token is None:
             return jsonify({'message': 'Missing token'}), 401
-        token = token.split(' ')[1]
+        if ad_id is None:
+            return jsonify({'message': 'Missing ad id'}), 400
 
+        token = token.split(' ')[1]
+        #check if user is advertiser
         for user in users:
             if get_token(user) == token:
-                if user['type'] == 'A':
-                    return jsonify({'message': 'Advertisers unauthorized'}), 401
-                
-                location = request.args.get('location')
-                age_range = request.args.get('age_range')
-
-                if age_range not in age_groups:
-                    return jsonify({'message': 'Invalid age range'}), 400
-
-                ads_to_return = [] 
+                if user['type'] != "A":
+                    return jsonify({'message': 'Consumers not authorized'}), 401
+                #check if ad exists and if it belongs to the user
                 for ad in ads:
-                    if not location or ad['target_audience']['location'].lower() == location.lower():
-                        if not age_range or ad['target_audience']['age_range'] == age_range:
-                            temp_ad = {
-                                'id': ad['id'],
-                                'ad_type': ad['ad_type'],
-                                'description': ad['description'],
-                                'ad_creative': ad['ad_creative'],
-                            }
-                            ads_to_return.append(temp_ad)
-
-                if len(ads_to_return) == 0:
-                    return jsonify({'message': 'No ads found'}), 404
-                return jsonify({'ads': ads_to_return}), 200
+                    if str(ad['id']) == str(ad_id) and ad['user'] == user['id']:
+                        print("found ad")
+                        ads.remove(ad)
+                        return jsonify({'message': 'Ad deleted'}), 200
+                    
+                return jsonify({'message': 'Ad not found'}), 404
             
         return jsonify({'message': 'Invalid token'}), 401
-        #TODO return javascript code to render the ads (or maybe just the ad info)
-        #TODO maybe a limit on the number of ads returned
+    
+    return jsonify({'message': 'Invalid request'}), 400
     
 if __name__ == '__main__':
     app.run(debug=True)

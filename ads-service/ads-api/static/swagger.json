@@ -34,33 +34,40 @@
         "tags": [
           "ads"
         ],
-        "security": [
-            {
-              "bearerAuth": []
-            }
-          ],
-        "summary": "Get ads based on filtering",
-        "description": "Get existing ads by entering optional parameters",
+        "summary": "Get ads html snippet based on filtering",
+        "description": "Get existing ads by entering optional parameters and updating the ad's impressions counter",
         "operationId": "get_ads",
         "parameters": [
-          {
-            "name": "location",
-            "in": "query",
-            "description": "The targetting location for the ad",
-            "required": false,
-            "schema": {
-              "type": "string"
+            {
+                "name": "publisher_id",
+                "in": "query",
+                "description": "The ID of the publisher requesting the ad",
+                "required": true,
+                "schema": {
+                "type": "integer"
+                },
+                "example": 1534
+            },
+            {
+                "name": "location",
+                "in": "query",
+                "description": "The targetting location for the ad",
+                "required": false,
+                "schema": {
+                "type": "string"
+                },
+                "example": "portugal"
+            },
+            {
+                "name": "age_range",
+                "in": "query",
+                "description": "The targetting age range ('youth', 'adults' or 'seniors')",
+                "required": false,
+                "schema": {
+                "type": "string"
+                },
+                "example": "youth"
             }
-          },
-          {
-            "name": "age_range",
-            "in": "query",
-            "description": "The targetting age range ('youth', 'adults' or 'seniors')",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
         ],
         "responses": {
           "200": {
@@ -72,9 +79,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "User not authorized"
           },
           "404": {
             "description": "No ads found"
@@ -133,6 +137,77 @@
             }
           }
       }
+    },
+    "/v1/ads/{ad_id}":{
+        "delete" : {
+            "tags": [
+              "ads"
+            ],
+            "summary": "Delete an ad from the platform",
+            "description": "Delete an ad from the platform",
+            "operationId": "delete_ad",
+            "security": [
+              {
+                "bearerAuth": []
+              }
+            ],
+              "parameters": [
+                  {
+                  "name": "ad_id",
+                  "in": "path",
+                  "description": "The ID of the ad to be deleted",
+                  "required": true,
+                  "schema": {
+                      "type": "integer"
+                  }
+                  }
+              ],
+            "responses": {
+              "200": {
+                "description": "Ad deleted"
+              },
+              "400": {
+                  "description": "Invalid request data"
+              },
+              "401": {
+                "description": "User not authorized"
+              },
+              "404": {
+                "description": "Ad not found"
+              }
+            }
+          },
+          "post" : {
+            "tags": [
+              "ads"
+            ],
+            "summary": "Update the ad's clicks",
+            "description": "Update the ad's number of clicks on the platform",
+            "operationId": "update_ad_clicks",
+            "parameters": [
+                {
+                    "name": "ad_id",
+                    "in": "path",
+                    "description": "The ID of the ad to be deleted",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }
+            ],
+            "responses": {
+              "200": {
+                "description": "Operation successful"
+              },
+              "400": {
+                  "description": "Invalid request data"
+              },
+              "404": {
+                "description": "Ad not found"
+              }
+            }
+          }
+
     },
     "/v1/users": {
       "post": {
@@ -336,55 +411,6 @@
           },
           "400": {
             "description": "Invalid request data"
-          },
-          "401": {
-            "description": "User not authorized"
-          },
-          "404": {
-            "description": "Ad not found"
-          }
-        }
-      }
-    },
-    "/v1/track": {
-      "post": {
-        "tags": [
-          "ads"
-        ],
-        "security": [
-            {
-              "bearerAuth": []
-            }
-        ],
-        "summary": "Update the analytics of an advertisement",
-        "description": "Update the number of impressions or clicks of an advertisement based on it's pricing model. For example, if the pricing model is cost-per-impression, this request will increment the number of impressions of that advertisement.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ad_id": {
-                    "type": "integer",
-                    "format": "int64",
-                    "example": 2
-                  },
-                  "event": {
-                    "type": "string",
-                    "example": "impression"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful operation"
-          },
-          "400": {
-            "description": "Invalid request data/event"
           },
           "401": {
             "description": "User not authorized"

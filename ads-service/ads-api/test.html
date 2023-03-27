@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Ad Code</title>
+</head>
+<body>
+  <h1>Advertisement</h1>
+  <div id="ad-container"></div>
+
+  <script>
+    fetch('http://localhost:5000/v1/ads?location=portugal&publisher_id=1', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        
+      },
+    })
+    .then(response => response.text())
+    .then(adCode => {
+      const adContainer = document.getElementById('ad-container');
+        //get the value of the "ads" key and console.log it
+        var ad = JSON.parse(adCode);
+        var ads = ad.ads;
+        
+        //loop through the array of ads
+        for (var i = 0; i < ads.length; i++) {
+            //create a div element
+            var div = document.createElement('div');
+            //set the div's innerHTML to the ad code
+            div.innerHTML = ads[i];
+            //append the div to the ad container
+            adContainer.appendChild(div);
+        }
+        
+    })
+    .catch(error => {
+      console.error(error);
+    });
+  </script>
+</body>
+</html>
