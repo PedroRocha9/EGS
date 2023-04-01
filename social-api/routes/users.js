@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { handleUserResponse } = require('../responses');
+const { handleUserResponse, handleCreateUserRequest, handleUpdateUserRequest, handleDeleteUserRequest, userFollowHandler } = require('../responses');
 
 
 /**
  * @swagger
  * /v1/users/{uuid}:
  *  get:
- *      summary: Returns a variety of information about a single user specified by the requested UID.
+ *      summary: Returns a variety of information about a single user specified by the requested UUID.
  *      tags: [Users]
  *      parameters:
  *          - in: path
@@ -15,10 +15,175 @@ const { handleUserResponse } = require('../responses');
  *            schema:
  *              type: string
  *            required: true
+ *            description: The UID of the user in mixit platform
  *          - in: query
  *            name: user.fields
  *            schema:
  *              type: string
+ *            description: The fields can be location, created_at, public_metrics, and must be separated by commas. Make sure to not include a space between commas and fields.
+ *      responses:
+ *          200:
+ *              description: A User Object
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/User'                            
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: User not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'       
+ */
+router.get("/:uuid", async (req, res) => {
+  await handleUserResponse(req, res);
+});
+
+/**
+ * @swagger
+ * /v1/users/{uuid}:
+ *  post:
+ *      summary: Adds a new user in the platform based on the UUID provided.
+ *      tags: [Users]
+ *      parameters:
+ *          - in: path
+ *            name: uuid
+ *            schema:
+ *              type: string
+ *            required: true
+ *            description: The UID of the user in mixit platform.
+ *          - in: query
+ *            name: name
+ *            schema:
+ *              type: string
+ *            description: The name displayed in the user's profile in mixit platform.
+ *            required: true
+ *          - in: query
+ *            name: username
+ *            schema:
+ *              type: string
+ *            description: The username/handler of the user in mixit platform.
+ *            required: true
+ *          - in: query
+ *            name: location
+ *            schema:
+ *              type: string
+ *            description: The location selected by the user in mixit platform.
+ *            required: true
+ *          - in: query
+ *            name: twitter_id
+ *            schema:
+ *              type: string
+ *            description: The twitter id of the user associated with the mixit profile.
+ *            required: true
+ *      responses:
+ *          200:
+ *              description: A User Object
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/User'                            
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: Twitter user not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
+ *          409:
+ *              description: User already registered in mixit
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorDuplicateResource'
+ *                   
+ */
+router.post("/:uuid", async (req, res) => {
+  await handleCreateUserRequest(req, res);
+});
+
+/**
+ * @swagger
+ * /v1/users/{uuid}:
+ *  put:
+ *      summary: Updates the information of the user added to the platform.
+ *      tags: [Users]
+ *      parameters:
+ *          - in: path
+ *            name: uuid
+ *            schema:
+ *              type: string
+ *            required: true
+ *            description: The UID of the user in mixit platform.
+ *          - in: query
+ *            name: name
+ *            schema:
+ *              type: string
+ *            description: The name displayed in the user's profile in mixit platform.
+ *          - in: query
+ *            name: username
+ *            schema:
+ *              type: string
+ *            description: The username/handler of the user in mixit platform.
+ *          - in: query
+ *            name: location
+ *            schema:
+ *              type: string
+ *            description: The location selected by the user in mixit platform.
+ *      responses:
+ *          200:
+ *              description: A User Object
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/User'                            
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: Twitter user not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
+ *          409:
+ *              description: User already registered in mixit
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorDuplicateResource'
+ *                   
+ */
+router.put("/:uuid", async (req, res) => {
+  await handleUpdateUserRequest(req, res);
+});
+
+/**
+ * @swagger
+ * /v1/users/{uuid}:
+ *  delete:
+ *      summary: Removes an user from the platform based on the UUID provided.
+ *      tags: [Users]
+ *      parameters:
+ *          - in: path
+ *            name: uuid
+ *            schema:
+ *              type: string
+ *            required: true
  *            description: The UID of the user in mixit platform
  *      responses:
  *          200:
@@ -26,76 +191,27 @@ const { handleUserResponse } = require('../responses');
  *              content:
  *                  application/json:
  *                      schema:
- *                          allOf:
- *                              - $ref: '#/components/schemas/User'
- *                      examples:
- *                          UserFound:
- *                              summary: User Found
- *                              value:
- *                                  data:
- *                                      name: "André Clérigo"
- *                                      uuid: "1128339639209811969"
- *                                      username: "mrmaster"
- *                                      created_at: "2019-05-14T16:41:48.000Z"
- *                                      location: "Portugal"
- *                                      public_metrics:
- *                                          followers_count: 144
- *                                          following_count: 125
- *                                      external_information:
- *                                          twitter_name: "André"
- *                                          twitter_username: "mrmaster__"
- *                          UserNotFound:
- *                              summary: User NOT Found
- *                              value:
- *                                  errors:
- *                                      - parameters:
- *                                          value: [":uuid"]
- *                                  detail: "Could not find user with username: [':uuid']."
- *                                  title: "Not Found Error"
- *                                  parameter: "uuid"
- *                                  resource_type: "user"
+ *                        type: object
+ *                        properties:
+ *                          message:
+ *                            type: string
+ *                            description: A message indicating the success of the operation.
+ *                            example: Succes operation
  *          400:
  *              description: Bad request
  *              content:
  *                  application/json:
  *                      schema:
- *                          type: object
- *                          properties:
- *                              errors:
- *                                  type: array
- *                                  items:
- *                                      type: object
- *                                      properties:
- *                                          parameters:
- *                                              type: object
- *                                              properties:
- *                                                  id:
- *                                                      type: array
- *                                                      items:
- *                                                          type: string
- *                                          message:
- *                                              type: string
- *                                  required:
- *                                      - parameters
- *                                      - message
- *                              title:
- *                                  type: string
- *                              detail:
- *                                  type: string
- *                          required:
- *                              - errors
- *                              - title
- *                              - detail
- *                      example:
- *                          errors:
- *                              - parameters:
- *                                    uuid: [":uuid"]
- *                                message: "The 'uuid' query parameter value [:uuid] is not valid"
- *                          title: "Invalid Request"
- *                          detail: "One or more parameters to your request were invalid."
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: User not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'       
  */
-router.get("/:uuid", async (req, res) => {
-  await handleUserResponse(req, res, "uuid");
+router.delete("/:uuid", async (req, res) => {
+  await handleDeleteUserRequest(req, res);
 });
 
 /**
@@ -110,87 +226,126 @@ router.get("/:uuid", async (req, res) => {
  *            schema:
  *              type: string
  *            required: true
+ *            description: The username of the user in mixit platform
  *          - in: query
  *            name: user.fields
  *            schema:
  *              type: string
- *            description: The UID of the user in mixit platform
+ *            description: The fields can be location, created_at, public_metrics, and must be separated by commas. Make sure to not include a space between commas and fields.
+ *            
  *      responses:
  *          200:
  *              description: A User Object
  *              content:
  *                  application/json:
  *                      schema:
- *                          allOf:
- *                              - $ref: '#/components/schemas/User'
- *                      examples:
- *                          UserFound:
- *                              summary: User Found
- *                              value:
- *                                  data:
- *                                      name: "André Clérigo"
- *                                      uuid: "1128339639209811969"
- *                                      username: "mrmaster"
- *                                      created_at: "2019-05-14T16:41:48.000Z"
- *                                      location: "Portugal"
- *                                      public_metrics:
- *                                          followers_count: 144
- *                                          following_count: 125
- *                                      external_information:
- *                                          twitter_name: "André"
- *                                          twitter_username: "mrmaster__"
- *                          UserNotFound:
- *                              summary: User NOT Found
- *                              value:
- *                                  errors:
- *                                      - parameters:
- *                                          value: [":username"]
- *                                  detail: "Could not find user with username: [':username']."
- *                                  title: "Not Found Error"
- *                                  parameter: "username"
- *                                  resource_type: "user"
+ *                          $ref: '#/components/schemas/User'
  *          400:
  *              description: Bad request
  *              content:
  *                  application/json:
  *                      schema:
- *                          type: object
- *                          properties:
- *                              errors:
- *                                  type: array
- *                                  items:
- *                                      type: object
- *                                      properties:
- *                                          parameters:
- *                                              type: object
- *                                              properties:
- *                                                  id:
- *                                                      type: array
- *                                                      items:
- *                                                          type: string
- *                                          message:
- *                                              type: string
- *                                  required:
- *                                      - parameters
- *                                      - message
- *                              title:
- *                                  type: string
- *                              detail:
- *                                  type: string
- *                          required:
- *                              - errors
- *                              - title
- *                              - detail
- *                      example:
- *                          errors:
- *                              - parameters:
- *                                    username: [":username"]
- *                                message: "The 'username' query parameter value [:username] is not valid"
- *                          title: "Invalid Request"
- *                          detail: "One or more parameters to your request were invalid."
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: User not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get("/by/username/:username", async (req, res) => {
-  await handleUserResponse(req, res, "username");
+  await handleUserResponse(req, res);
+});
+
+/**
+ * @swagger
+ * /v1/users/{uuid}/followers:
+ *  get:
+ *      summary: Returns a list of users who are followers of the specified UUID (Twitter ID).
+ *      tags: [Users]
+ *      parameters:
+ *          - in: path
+ *            name: uuid
+ *            schema:
+ *              type: string
+ *            required: true
+ *            description: The UID of the user in mixit platform
+ *          - in: query
+ *            name: next_token
+ *            schema:
+ *              type: string
+ *            description: A value that encodes the next 'page' of results that can be requested.
+ *      
+ *      responses:
+ *          200:
+ *              description: A list of users who are followers.
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                        type: array
+ *                        items:
+ *                          $ref: '#/components/schemas/FollowUser'
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ * 
+ *          404:
+ *              description: User not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
+*/
+router.get("/:uuid/followers", async (req, res) => {
+  await userFollowHandler(req, res, "followers");
+});
+
+/**
+ * @swagger
+ * /v1/users/{uuid}/following:
+ *  get:
+ *      summary: Returns a list of users that the specified UUID (Twitter ID) follows.
+ *      tags: [Users]
+ *      parameters:
+ *          - in: path
+ *            name: uuid
+ *            schema:
+ *              type: string
+ *            required: true
+ *            description: The UUID of the user in mixit platform
+ *          - in: query
+ *            name: next_token
+ *            schema:
+ *              type: string
+ *            description: A value that encodes the next 'page' of results that can be requested.
+ *      
+ *      responses:
+ *          200:
+ *              description: A list of users who are followers.
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                        type: array
+ *                        items:
+ *                          $ref: '#/components/schemas/FollowUser'
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: User not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
+ */
+router.get("/:uuid/following", async (req, res) => {
+  await userFollowHandler(req, res, "following");
 });
 
 module.exports = router;
