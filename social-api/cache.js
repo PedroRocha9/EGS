@@ -1,4 +1,5 @@
 const amqp = require('amqplib');
+const Queue = require('bull');
 const redis  = require('redis');
 const { fetchFromTwitter } = require('./twitter');
 
@@ -6,9 +7,10 @@ const rabbitmqUrl = 'amqp://localhost';
 const updateQueue = 'cache_update';
 const setQueue = 'cache_set';
 
+
 const fetchFromCache = async (key, id, twitterQuery, next_token) => {
   const message = { key, id, twitterQuery, next_token };
-  
+
   // First attempt to retrieve data from the cache
   try {
     let cachedResult;
@@ -16,6 +18,7 @@ const fetchFromCache = async (key, id, twitterQuery, next_token) => {
     if (next_token === undefined) {
       cachedResult = await redisClient.get(`${key}:${id}`);
     } else {
+      console.log('aqui');
       cachedResult = await redisClient.get(`${key}:${id}:${next_token}`);
     }
     
@@ -51,20 +54,28 @@ const deleteFromCache = async (id) => {
 const updateCacheFromAPI = async (message, channel) => {
   // Extract information from the message
   const { key, id, twitterQuery, next_token } = JSON.parse(message.content.toString());
-
+  
   try {
     // Get the updated data from the Twitter API
     const twitterApiResponse = await fetchFromTwitter(key, id, twitterQuery, next_token);
-    console.log(`Cache updated in broker`);
 
     if (next_token === undefined) {
       await redisClient.set(`${key}:${id}`, JSON.stringify(twitterApiResponse));
     } else {
       await redisClient.set(`${key}:${id}:${next_token}`, JSON.stringify(twitterApiResponse));
     }
+    console.log(`Cache updated in broker`);
   } catch (error) {
     console.error('Redis had an error while updating the cache', error);
   }
+  
+  periodicQueue.add({ key, id, twitterQuery, next_token }, {
+    // WATCHOUT FOR RATE LIMIT
+    repeat: {
+      every: 10000,     // Every 10 seconds
+      limit: 1          // 1 time
+    }
+  });
 
   // Acknowledge message
   channel.ack(message);
@@ -88,29 +99,27 @@ const updateCacheWithValue = async (message, channel) => {
   channel.ack(message);
 };
 
-const startConsumer = async () => {
+const periodicUpdateCacheFromAPI = async (data) => {
+  // Extract information from the message
+  const { key, id, twitterQuery, next_token } = data;
+  
   try {
-    // Connect to RabbitMQ
-    const connection = await amqp.connect(rabbitmqUrl);
-    const channel = await connection.createChannel();
-  
-    // Queue for user triggered updates (cache hit)
-    await channel.assertQueue(updateQueue, { durable: true });
-    // Queue for user triggered updates (cache miss)
-    await channel.assertQueue(setQueue, { durable: true });
-  
-    // Consume messages from the queues
-    channel.consume(updateQueue, (message) => {    
-      updateCacheFromAPI(message, channel);
-    });
-    channel.consume(setQueue, (message) => {    
-      updateCacheWithValue(message, channel);
-    });
+    // Get the updated data from the Twitter API
+    const twitterApiResponse = await fetchFromTwitter(key, id, twitterQuery, next_token);
+
+    if (next_token === undefined) {
+      await redisClient.set(`${key}:${id}`, JSON.stringify(twitterApiResponse));
+    } else {
+      await redisClient.set(`${key}:${id}:${next_token}`, JSON.stringify(twitterApiResponse));
+    }
+    console.log(`Cache updated in broker`);
   } catch (error) {
-    console.error('RabbitMQ had an error starting the consumer', error);
+    console.error('Redis had an error while updating the cache', error);
   }
 };
 
+
+/* Message Broker definitions */
 const publishMessage = async (message, queueName) => {
   try {
     // Connect to RabbitMQ
@@ -134,36 +143,42 @@ const publishMessage = async (message, queueName) => {
   }
 };
 
-const periodicCacheUpdate = async () => {
-  try {
+const startConsumer = async () => {
+	try {
     // Connect to RabbitMQ
     const connection = await amqp.connect(rabbitmqUrl);
     const channel = await connection.createChannel();
 
-    // Declare queue
-    await channel.assertQueue(queueName, { durable: true });
+		// Queue for user triggered updates (cache hit)
+		await channel.assertQueue(updateQueue, { durable: true });
+		// Queue for user triggered updates (cache miss)
+		await channel.assertQueue(setQueue, { durable: true });
+	
+		channel.consume(updateQueue, (message) => {
+			updateCacheFromAPI(message, channel);
+		});
 
-    // Send message to queue
-    const jsonMessage = JSON.stringify(message);
-    channel.sendToQueue(queueName, Buffer.from(jsonMessage), { persistent: true });
+		channel.consume(setQueue, (message) => {
+			updateCacheWithValue(message, channel);
+		});
+	} catch (error) {
+		console.error('RabbitMQ had an error starting the consumer', error);
+	}
+};
 
-    // Close connection and channel
-    setTimeout(() => {
-      channel.close();
-      connection.close();
-    }, 500);
-  } catch(error) {
-    console.error('RabbitMQ had an error publishing the message', error);
-  }
-}
-
+/* Start the redis client and broker consumer */
 const redisClient = redis.createClient();
 (async () => {
   redisClient.on("error", (error) => console.error(`Ups : ${error}`));
   await redisClient.connect();
 })();
 
-// Start consuming messages from the queue
+const periodicQueue = new Queue('periodicQueue', {
+  defaultJobOptions: {
+    timeout: 5000, // 5 seconds
+  }
+});
+
 startConsumer();
 
-module.exports = { fetchFromCache, deleteFromCache };
+module.exports = { fetchFromCache, deleteFromCache, periodicUpdateCacheFromAPI };

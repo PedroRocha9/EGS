@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { handleUserResponse, handleCreateUserRequest, handlerUpdateUserRequest, handleDeleteUserRequest, userFollowHandler } = require('../responses');
+const { handleUserResponse, handleCreateUserRequest, handleUpdateUserRequest, handleDeleteUserRequest, userFollowHandler } = require('../responses');
 
 
 /**
@@ -141,11 +141,6 @@ router.post("/:uuid", async (req, res) => {
  *            schema:
  *              type: string
  *            description: The location selected by the user in mixit platform.
- *          - in: query
- *            name: twitter_id
- *            schema:
- *              type: string
- *            description: The twitter id of the user associated with the mixit profile.
  *      responses:
  *          200:
  *              description: A User Object
@@ -174,7 +169,7 @@ router.post("/:uuid", async (req, res) => {
  *                   
  */
 router.put("/:uuid", async (req, res) => {
-  await handlerUpdateUserRequest(req, res);
+  await handleUpdateUserRequest(req, res);
 });
 
 /**

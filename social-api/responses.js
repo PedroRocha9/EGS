@@ -1,6 +1,9 @@
 const { fetchFromDatabase, addToDatabase, updateDatabase, deleteFromDatabase } = require("./database");
 const { fetchFromCache } = require("./cache");
+const { startWorker } = require("./worker");
 require('dotenv').config();
+
+startWorker();
 
 
 // Get user's information endpoint handler
@@ -11,25 +14,20 @@ const handleUserResponse = async (req, res) => {
 
   try {
     const invalidUserHandlerResult = await invalidUserHandler(req, res, param);
-    if (invalidUserHandlerResult === 'response_sent') {
-      return;
-    }
+    if (invalidUserHandlerResult === 'response_sent') return;
     
     const queryHandlerResult = await queryHandler(req, res, ["user.fields"], {"user.fields": ["location", "created_at", "public_metrics"]});
-    if (queryHandlerResult === 'response_sent') {
-      return;
-    }
+    if (queryHandlerResult === 'response_sent') return;
 
     let dbQuery = requiredFields;
     let cacheQuery = [];
 
     if (Object.keys(query).length > 0) {
       query["user.fields"].split(",").forEach(element => {
-        if (element === "location" || element === "created_at") {
+        if (element === "location" || element === "created_at")
           dbQuery.push(element);
-        } else {
+        else
           cacheQuery.push(element);
-        }
       });
     }
 
@@ -52,7 +50,6 @@ const handleUserResponse = async (req, res) => {
     return res.status(200).json({ data: data });
   } catch (error) {
     console.log(error);   // Debugging purposes
-
     return res.status(500).json({ errors: "Internal server error" });
   }
 };
@@ -64,9 +61,7 @@ const userFollowHandler = async (req, res, type) => {
 
   try {
     const invalidUserHandlerResult = await invalidUserHandler(req, res, param);
-    if (invalidUserHandlerResult === 'response_sent') {
-      return;
-    }
+    if (invalidUserHandlerResult === 'response_sent') return;
 
     const data = await fetchFromDatabase("users", param, req.params[param], requiredFields);
     if (!data) {
@@ -80,23 +75,19 @@ const userFollowHandler = async (req, res, type) => {
       const queryHandlerResult = await queryHandler(req, res, ["next_token"], {"next_token": [String(arg)]});
       next_token = arg;
 
-      if (queryHandlerResult === 'response_sent') {
-        return;
-      }
+      if (queryHandlerResult === 'response_sent') return;
     }
 
     let followInfo;
 
-    if (type === "followers") {
+    if (type === "followers")
       followInfo = await fetchFromCache('followers', data.external_information.id, {'user.fields':  'profile_image_url'}, next_token);
-    } else if (type === "following") {
+    else if (type === "following")
       followInfo = await fetchFromCache('following', data.external_information.id, {'user.fields':  'profile_image_url'}, next_token);
-    }
 
     res.status(200).json(JSON.parse(followInfo));
   } catch (error) {
     console.log(error);   // Debugging purposes
-
     return res.status(500).json({ errors: "Internal server error" });
   }
 };
@@ -109,9 +100,7 @@ const handleUserPostResponse = async (req, res) => {
 
   try {
     const invalidUserHandlerResult = await invalidUserHandler(req, res, param);
-    if (invalidUserHandlerResult === 'response_sent') {
-      return;
-    }
+    if (invalidUserHandlerResult === 'response_sent') return;
 
     let data = await fetchFromDatabase("users", param, req.params[param], requiredFields);
     if (!data) {
@@ -120,22 +109,18 @@ const handleUserPostResponse = async (req, res) => {
     }
 
     const queryHandlerResult = await queryHandler(req, res, ["next_token"], {"next_token": [req.query[Object.keys(req.query)]]});
-    if (queryHandlerResult === 'response_sent') {
-      return;
-    }
+    if (queryHandlerResult === 'response_sent') return;
 
-    if (Object.keys(req.query).length === 0) {
-      next_token = null;
-    } else {
+    if (Object.keys(req.query).length === 0)
+      next_token = undefined;
+    else
       next_token = next_token.next_token;
-    }
 
     const tweets = await fetchFromCache('user_tweets', data.external_information.id, null, next_token);
 
     return res.status(200).json(JSON.parse(tweets));
   } catch (error) {
     console.log(error);   // Debugging purposes
-
     return res.status(500).json({ errors: "Internal server error" });
   }
 };
@@ -150,25 +135,13 @@ const handleCreateUserRequest = async (req, res) => {
   
   try {
     let invalidUserHandlerResult = await invalidUserHandler(req, res, param);
-    if (invalidUserHandlerResult === 'response_sent') {
-      return;
-    }
+    if (invalidUserHandlerResult === 'response_sent') return;
 
     invalidUserHandlerResult = await invalidUserHandler({params: {username: queries[Object.keys(queriesValues)[3]]}}, res, "username");
-    if (invalidUserHandlerResult === 'response_sent') {
-      return;
-    }
+    if (invalidUserHandlerResult === 'response_sent') return;
 
-    const queryHandlerResult = await queryHandler(req, res, ['name', 'username', 'location', 'twitter_id'], {
-      'name': [queries[Object.keys(queriesValues)[1]]],
-      'username': [queries[Object.keys(queriesValues)[3]]],
-      'location': [queries[Object.keys(queriesValues)[0]]],
-      'twitter_id': [queries[Object.keys(queriesValues)[2]]],
-    });
-
-    if (queryHandlerResult === 'response_sent') {
-      return;
-    }
+    const queryHandlerResult = await queryHandler(req, res, ['name', 'username', 'location', 'twitter_id'], queries);
+    if (queryHandlerResult === 'response_sent') return;
 
     let dbTest;
     // Check if the uuid is already registered
@@ -215,7 +188,6 @@ const handleCreateUserRequest = async (req, res) => {
     // Add user to database
     await addToDatabase("users", data);
     delete data._id;
-
     // Add external information to the response
     data["external_information"]["twitter_name"] = JSON.parse(externalInfoCache).twitter_name;
     data["external_information"]["twitter_username"] = JSON.parse(externalInfoCache).twitter_username;
@@ -229,7 +201,36 @@ const handleCreateUserRequest = async (req, res) => {
 };
 
 // Put user endpoint handler
-const hadnleUpdateUserRequest = async (req, res) => {
+const handleUpdateUserRequest = async (req, res) => {
+  const requiredFields = ['uuid', 'username', 'name', 'external_information'];
+  const param = Object.keys(req.params)[0];
+  let queries = req.query;
+  
+  try {
+    let invalidUserHandlerResult = await invalidUserHandler(req, res, param);
+    if (invalidUserHandlerResult === 'response_sent') return;
+
+    let data = await fetchFromDatabase("users", param, req.params[param], requiredFields);
+    if (!data) {
+      userNotFoundHandler(req, res, param);
+      return;
+    }
+
+    if (queries.username) {
+      invalidUserHandlerResult = await invalidUserHandler({params: {username: queries.username}}, res, "username");
+      if (invalidUserHandlerResult === 'response_sent') return;
+    }
+
+    const queryHandlerResult = await queryHandler(req, res, ["name", "username", "location"], queries);
+    if (queryHandlerResult === 'response_sent') return;
+
+    data = await updateDatabase("users", param, req.params[param], queries);
+
+    return res.status(200).json(data);
+  } catch (error) {
+    console.log(error);   // Debugging purposes
+    return res.status(500).json({ errors: "Internal server error" });
+  }
 };
 
 // Delete user endpoint handler
@@ -238,9 +239,7 @@ const handleDeleteUserRequest = async (req, res) => {
 
   try {
     const invalidUserHandlerResult = await invalidUserHandler(req, res, param);
-    if (invalidUserHandlerResult === 'response_sent') {
-      return;
-    }
+    if (invalidUserHandlerResult === 'response_sent') return;
     
     let data = await deleteFromDatabase("users", param, req.params[param]);
     if (!data) {
@@ -251,7 +250,6 @@ const handleDeleteUserRequest = async (req, res) => {
     return res.status(200).json({ message: "Deleted user with uuid:[" + req.params[param] + "] successfully." });
   } catch (error) {
     console.log(error);   // Debugging purposes
-
     return res.status(500).json({ errors: "Internal server error" });
   }
 };
@@ -265,7 +263,7 @@ const invalidUserHandler = async (req, res, param) => {
     // if param is uuid and the value contains letters, return error
     if (param === "uuid" && req.params[param].match(/[a-zA-Z]/)) throw new Error("Invalid uuid");
 
-    return
+    return;
   } catch (error) {
     console.log(error.message);   // Debugging purposes
     res.status(400).json({
@@ -299,11 +297,10 @@ const userNotFoundHandler = async (req, res, param) => {
 
 const userAlreadyRegisteredHandler = async (req, res, param) => {
   let value;
-  if (req.params[param]) {
+  if (req.params[param])
     value = req.params[param];
-  } else {
+  else
     value = req.query[param];
-  }
 
   res.status(409).json({
     errors: [{
@@ -327,28 +324,20 @@ const queryHandler = async (req, res, queryKeys, queryValues) => {
 
       // Check if they is on queryKeys list
       if (!queryKeys.includes(key)) {
-        queryErrorStack.push(
-          {
-            parameters: {
-              [key]: [req.query[key]]
-            },
+        queryErrorStack.push({
+          parameters: { [key]: [req.query[key]] },
             message: "The query parameter [" + key + "] is not one of [" + queryKeys + "]"
-          }
-        );
+        });
       } else {
         let values = req.query[key].split(',');
 
          // Check if value for the valid key is on queryValues dict
         for (let j in values) {
           if (!queryValues[key].includes(values[j])) {
-            queryErrorStack.push(
-              {
-                parameters: {
-                  [key]: [req.query[key]]
-                },
-                message: "The `" + key + "` query parameter value [" + values[j] + "] is not one of [" + queryValues[key] +"]"
-              }
-            );
+            queryErrorStack.push({
+              parameters: { [key]: [req.query[key]] },
+              message: "The `" + key + "` query parameter value [" + values[j] + "] is not one of [" + queryValues[key] +"]"
+            });
           }
         }
       }
@@ -370,7 +359,7 @@ const queryHandler = async (req, res, queryKeys, queryValues) => {
 };
 
 module.exports = {
-  handleUserResponse, handleCreateUserRequest, hadnleUpdateUserRequest, handleDeleteUserRequest,
+  handleUserResponse, handleCreateUserRequest, handleUpdateUserRequest, handleDeleteUserRequest,
   userFollowHandler, 
   handleUserPostResponse
-};  
+};

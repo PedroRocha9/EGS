@@ -67,9 +67,11 @@ const fetchFollowingFromTwitter = async (id, query, next_token) => {
   }
 };
 
-const fetchUserTweetsFromTwitter = async (id, query) => {
+const fetchUserTweetsFromTwitter = async (id, query, next_token) => {
+  let queries = { exclude: 'replies', expansions: 'attachments.media_keys', 'media.fields': ['url', 'preview_image_url']};
   try {
-    const userTweets = await readOnlyClient.v2.userTimeline(id, { exclude: 'replies', expansions: 'attachments.media_keys', 'media.fields': ['url', 'preview_image_url']});
+    if (next_token !== undefined) queries = { ...queries, 'pagination_token': next_token };
+    const userTweets = await readOnlyClient.v2.userTimeline(id, queries);
 
     // Iterate over tweets
     userTweets.data.data.forEach(tweet => {
