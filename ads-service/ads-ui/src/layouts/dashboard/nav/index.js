@@ -64,7 +64,7 @@ export default function Nav({ openNav, onCloseNav }) {
 
             <Box sx={{ ml: 2 }}>
               <Typography variant="subtitle1" sx={{ color: 'text.primary' }}>
-                Pingo Doce
+                {localStorage.getItem('name').replace(/['"]+/g, '')}
               </Typography>
 
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -72,7 +72,7 @@ export default function Nav({ openNav, onCloseNav }) {
               </Typography>
 
               <Typography variant="body2" sx={{ color: 'text.secondary' }} fontSize="12px">
-                pingodoce@example.com
+                {localStorage.getItem('email').replace(/['"]+/g, '')}
               </Typography>
             </Box>
           </StyledAccount>

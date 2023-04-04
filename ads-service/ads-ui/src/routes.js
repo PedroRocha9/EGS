@@ -11,45 +11,48 @@ import AdsPage from './pages/AdsPage';
 import NewAdPage from './pages/NewAdPage';
 import DashboardAppPage from './pages/DashboardAppPage';
 
+import { useState, useEffect } from 'react';
+
 // ----------------------------------------------------------------------
 
 export default function Router() {
-  const routes = useRoutes([
-    {
-      path: '/dashboard',
-      element: <DashboardLayout />,
-      children: [
-        { element: <Navigate to="/dashboard/app" />, index: true },
-        { path: 'app', element: <DashboardAppPage /> },
-        { path: 'manage', element: <ManagePage /> },
-        { path: 'ads', element: <AdsPage /> },
-      ],
-    },
-    {
-      path: 'login',
-      element: <LoginPage />,
-    },
-    {
-        path: 'register',
-        element: <RegisterPage />,
-    },
-    {
-        path: 'new-ad',
-        element: <NewAdPage />,
-    },
-    {
-      element: <SimpleLayout />,
-      children: [
-        { element: <Navigate to="/dashboard/app" />, index: true },
-        { path: '404', element: <Page404 /> },
-        { path: '*', element: <Navigate to="/404" /> },
-      ],
-    },
-    {
-      path: '*',
-      element: <Navigate to="/404" replace />,
-    },
-  ]);
 
-  return routes;
-}
+    const routes = useRoutes([
+        {
+        path: '/dashboard',
+        element: <DashboardLayout />,
+        children: [
+            { element: <Navigate to="/dashboard/app" />, index: true },
+            { path: 'app', element: <DashboardAppPage /> },
+            { path: 'manage', element: <ManagePage/> },
+            { path: 'ads', element: <AdsPage /> },
+        ],
+        },
+        {
+        path: 'login',
+        element: <LoginPage />,
+        },
+        {
+            path: 'register',
+            element: <RegisterPage />,
+        },
+        {
+            path: 'new-ad',
+            element: <NewAdPage />,
+        },
+        {
+        element: <SimpleLayout />,
+        children: [
+            { element: <Navigate to="/dashboard/app" />, index: true },
+            { path: '404', element: <Page404 /> },
+            { path: '*', element: <Navigate to="/404" /> },
+        ],
+        },
+        {
+        path: '*',
+        element: <Navigate to="/404" replace />,
+        },
+    ]);
+
+    return routes;
+    }

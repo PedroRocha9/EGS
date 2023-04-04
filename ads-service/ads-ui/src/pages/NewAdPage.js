@@ -10,6 +10,9 @@ import Iconify from '../components/iconify';
 // sections
 import { AdForm } from '../sections/ad';
 
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 // ----------------------------------------------------------------------
 
 const StyledRoot = styled('div')(({ theme }) => ({
@@ -41,41 +44,58 @@ const StyledContent = styled('div')(({ theme }) => ({
 // ----------------------------------------------------------------------
 
 export default function NewAdPage() {
-  const mdUp = useResponsive('up', 'md');
+    const mdUp = useResponsive('up', 'md');
 
-  return (
-    <>
-      <Helmet>
-        <title> Login </title>
-      </Helmet>
+    const navigate = useNavigate();
 
-      <StyledRoot>
-        <Logo
-          sx={{
-            position: 'fixed',
-            top: { xs: 16, sm: 24, md: 40 },
-            left: { xs: 16, sm: 24, md: 40 },
-          }}
-        />
+    useEffect(() => {
+        if (localStorage.getItem('email') != null) {
+            console.log(localStorage.getItem('email') + " is logged in");
+            console.log("type: " + localStorage.getItem('type'));
+            if(localStorage.getItem('type') != '"A"') {
+                console.log("not an advertiser");
+                navigate('/login');
+            }
+        }
+        else {
+            console.log("no user");
+            navigate('/login');
+        }
+    }, []);
 
-        {mdUp && (
-          <StyledSection >
-            <Typography variant="h3" sx={{ px: 5, mt: 10, mb: 5 }}>
-              Upload your ad !
-            </Typography>
-            <img src="/assets/illustrations/new_ad.png" alt="new-ad" />
-          </StyledSection>
-        )}
+    return (
+        <>
+        <Helmet>
+            <title> Login </title>
+        </Helmet>
 
-        <Container maxWidth="sm">
-          <StyledContent>
-            <Typography variant="h4" gutterBottom>
-              Advertisement Details
-            </Typography>
-            <AdForm />
-          </StyledContent>
-        </Container>
-      </StyledRoot>
-    </>
-  );
+        <StyledRoot>
+            <Logo
+            sx={{
+                position: 'fixed',
+                top: { xs: 16, sm: 24, md: 40 },
+                left: { xs: 16, sm: 24, md: 40 },
+            }}
+            />
+
+            {mdUp && (
+            <StyledSection >
+                <Typography variant="h3" sx={{ px: 5, mt: 10, mb: 5 }}>
+                Upload your ad !
+                </Typography>
+                <img src="/assets/illustrations/new_ad.png" alt="new-ad" />
+            </StyledSection>
+            )}
+
+            <Container maxWidth="sm">
+            <StyledContent>
+                <Typography variant="h4" gutterBottom>
+                Advertisement Details
+                </Typography>
+                <AdForm />
+            </StyledContent>
+            </Container>
+        </StyledRoot>
+        </>
+    );
 }
