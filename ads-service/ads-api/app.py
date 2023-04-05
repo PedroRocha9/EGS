@@ -1,5 +1,5 @@
 import math
-from flask import Flask, jsonify, request, render_template_string, render_template
+from flask import Flask, jsonify, request, render_template_string, render_template, redirect
 from uuid import uuid4
 import json
 import hashlib
@@ -54,18 +54,19 @@ def get_account_type(token):
         return "Internal error"
     
 
-@app.route('/v1/ads/<int:ad_id>', methods=['DELETE', 'POST'])
+@app.route('/v1/ads/<int:ad_id>', methods=['DELETE', 'GET'])
 def update_ad(ad_id=None):
-    if request.method == 'POST':
+    if request.method == 'GET':
         #validate data
         if ad_id is None:
             return jsonify({'message': 'Missing required data'}), 400
         
-        ad = cur.execute("SELECT clicks FROM ads WHERE id = ?", (ad_id,)).fetchone()
+        ad = cur.execute("SELECT * FROM ads WHERE id = ?", (ad_id,)).fetchone()
         if (ad[3] == "CPC"):
-            cur.execute("UPDATE ads SET clicks = ? WHERE id = ?", (ad[0] + 1, ad_id))
+            cur.execute("UPDATE ads SET clicks = ? WHERE id = ?", (ad[8] + 1, ad_id))
             conn.commit()
-            return jsonify({'message': 'Ad clicked'}), 200
+            print("Ad clicked")
+            return redirect(ad[10], code=302)
         else:
             return jsonify({'message': 'Ad not found'}), 404
 
@@ -150,7 +151,8 @@ def get_ads():
         
         ads_to_return = []
         for ad in ads:
-            js_code = render_template('ad_code.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2])
+            link = "http://localhost:5000/v1/ads/" + str(ad[0])
+            js_code = render_template('ad_href.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2], ad_redirect=link)
             ads_to_return.append(js_code)
             cur.execute("UPDATE ads SET impressions = ? WHERE id = ?", (ad[7] + 1, ad[0]))
 
