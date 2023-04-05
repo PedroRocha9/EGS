@@ -64,7 +64,7 @@ export default function Nav({ openNav, onCloseNav }) {
 
             <Box sx={{ ml: 2 }}>
               <Typography variant="subtitle1" sx={{ color: 'text.primary' }}>
-                {localStorage.getItem('name').replace(/['"]+/g, '')}
+                {localStorage.getItem('name') === null ? 'Name' : localStorage.getItem('name').replace(/['"]+/g, '')}
               </Typography>
 
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -72,7 +72,7 @@ export default function Nav({ openNav, onCloseNav }) {
               </Typography>
 
               <Typography variant="body2" sx={{ color: 'text.secondary' }} fontSize="12px">
-                {localStorage.getItem('email').replace(/['"]+/g, '')}
+                {localStorage.getItem('email') === null ? 'Email' : localStorage.getItem('email').replace(/['"]+/g, '')}
               </Typography>
             </Box>
           </StyledAccount>

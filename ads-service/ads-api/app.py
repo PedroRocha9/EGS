@@ -313,7 +313,8 @@ def get_user_analytics(adv_id):
         },
         'total_impressions': total_impressions,
         'total_clicks': total_clicks,
-        'total_ctr': total_ctr
+        'total_ctr': total_ctr,
+        'number_of_ads': len(ads)
     }), 200
 
 

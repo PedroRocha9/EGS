@@ -28,11 +28,43 @@ export default function DashboardAppPage() {
 
     const navigate = useNavigate();
 
+    const [numAds, setNumAds] = useState(0);
+    const [numImpressions, setNumImpressions] = useState(0);
+    const [numClicks, setNumClicks] = useState(0);
+    const [avgCpr, setAvgCpr] = useState(0);
+    const [bestClickAd, setBestClickAd] = useState(null);
+    const [bestImpressionAd, setBestImpressionAd] = useState(null);
+
     //on page load, read user from props
 
     useEffect(() => {
         if (localStorage.getItem('email') != null) {
             console.log(localStorage.getItem('email') + " is logged in");
+
+            //get user data from backend
+
+            fetch('http://localhost:5000/v1/analytics/advertiser/' + localStorage.getItem('id'), {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token').replace(/['"]+/g, ''),
+                },
+            })
+            .then((response) => {
+                if (response.status === 200) {
+                    response.json().then((data) => {
+                        setNumAds(data.number_of_ads);
+                        setNumImpressions(data.total_impressions);
+                        setNumClicks(data.total_clicks);
+                        setAvgCpr(data.total_ctr);
+                        setBestClickAd(data.highest_click_ad);
+                        setBestImpressionAd(data.highest_impression_ad);
+                    });
+                } else {
+                    alert(response.status);
+                }
+            }
+            )
         }
         else {
             console.log("no user");
@@ -53,25 +85,24 @@ export default function DashboardAppPage() {
 
             <Grid container spacing={3}>
             <Grid item xs={12} sm={6} md={3}>
-                <AppWidgetSummary title="Active Image Ads" total={13} color="info" icon={'ant-design:picture-filled'} />
+                <AppWidgetSummary title="Active Image Ads" total={numAds} color="info" icon={'ant-design:picture-filled'} />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-                <AppWidgetSummary title="Total Impressions" total={123315} color="warning" icon={'ant-design:eye-filled'} />
+                <AppWidgetSummary title="Total Impressions" total={numImpressions} color="warning" icon={'ant-design:eye-filled'} />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-                <AppWidgetSummary title="Total Clicks" total={2342} color="error" icon={'ant-design:pushpin-filled'} />
+                <AppWidgetSummary title="Total Clicks" total={numClicks} color="error" icon={'ant-design:pushpin-filled'} />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-                <AppWidgetSummary title="Average CPR" total={4} icon={'ant-design:rise-outlined'} />
+                <AppWidgetSummary title="Average CPR" total={avgCpr} icon={'ant-design:rise-outlined'} />
             </Grid>
 
-            <Grid item xs={12} md={6} lg={8}>
+            {/* <Grid item xs={12} md={6} lg={8}>
                 <AppWebsiteVisits
                 title="Total Engagement"
-                //   subheader="(+43%) than last year"
                 chartLabels={[
                     '05/01/2022',
                     '06/01/2022',
@@ -109,22 +140,20 @@ export default function DashboardAppPage() {
                     },
                 ]}
                 />
-            </Grid>
+            </Grid> */}
 
             <Grid item xs={12} md={6} lg={4}>
                 <AppCurrentVisits
                 title="Engagement Distribution"
                 chartData={[
-                    { label: 'Video Clicks', value: 4344 },
-                    { label: 'Video Impressions', value: 5435 },
-                    { label: 'Image Clicks', value: 1443 },
-                    { label: 'Image Impressions', value: 4443 },
+                    { label: 'Image Clicks', value: numClicks },
+                    { label: 'Image Impressions', value: numImpressions },
                 ]}
                 chartColors={[
-                    "#9BBFE0",
+
                     "#E8A09A",
                     "#FBE29F",
-                    "#C6D68F",
+
                 ]}
                 />
             </Grid>
@@ -192,33 +221,26 @@ export default function DashboardAppPage() {
                 />
             </Grid> */}
 
-            {/* <Grid item xs={12} md={6} lg={4}>
+            {bestImpressionAd != null && <Grid item xs={12} md={6} lg={8}>
                 <AppTrafficBySite
-                title="Traffic by Site"
+                title="Top performing advertisements"
                 list={[
                     {
-                    name: 'FaceBook',
-                    value: 323234,
-                    icon: <Iconify icon={'eva:facebook-fill'} color="#1877F2" width={32} />,
+                    name: bestImpressionAd.description,
+                    value: bestImpressionAd.impressions,
+                    icon: "Advertisement ID: " + bestImpressionAd.id,
+                    description: 'Number of impressions',
                     },
                     {
-                    name: 'Google',
-                    value: 341212,
-                    icon: <Iconify icon={'eva:google-fill'} color="#DF3E30" width={32} />,
-                    },
-                    {
-                    name: 'Linkedin',
-                    value: 411213,
-                    icon: <Iconify icon={'eva:linkedin-fill'} color="#006097" width={32} />,
-                    },
-                    {
-                    name: 'Twitter',
-                    value: 443232,
-                    icon: <Iconify icon={'eva:twitter-fill'} color="#1C9CEA" width={32} />,
+                    name: bestClickAd.description,
+                    value: bestClickAd.clicks,
+                    icon: "Advertisement ID: " + bestClickAd.id,
+                    description: 'Number of clicks',
                     },
                 ]}
                 />
-            </Grid> */}
+            </Grid>
+            }
 
             {/* <Grid item xs={12} md={6} lg={8}>
                 <AppTasks
