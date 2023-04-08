@@ -9,111 +9,123 @@ import Iconify from '../../components/iconify';
 // ----------------------------------------------------------------------
 
 export default function AdForm() {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  const [model, setModel] = useState('');
-  const [type, setType] = useState('');
-  const [age, setAge] = useState('');
-  const [location, setLocation] = useState('');
+    const [model, setModel] = useState('');
+    const [age, setAge] = useState('');
+    const [location, setLocation] = useState('');
+    const [description, setDescription] = useState('');
+    const [url, setUrl] = useState('');
+    const [target, setTarget] = useState('');
 
-  const handleClick = () => {
-    navigate('/dashboard', { replace: true });
-  };
+    const handleClick = () => {
+        fetch('http://localhost:5000/v1/ads', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('token').replace(/['"]+/g, ''),
+            },
+            body: JSON.stringify({
+                pricing_model: model,
+                age_range: age,
+                location: location,
+                description: description,
+                ad_creative: url,
+                target: target,
+            }),
+        })
+        .then((response) => {
+            if (response.status === 201) {
+                navigate('/dashboard', { replace: true });
+            } else {
+                alert('Invalid information');
+            }
+        }
+        )
+        .catch((error) => {
+            console.error('Error:', error);
+        }
+        );
+    };
 
-  const handleModel = (event) => {
-    setModel(event.target.value);
-  };
-
-    const handleType = (event) => {
-    setType(event.target.value);
+    const handleModel = (event) => {
+        setModel(event.target.value);
     };
 
     const handleAge = (event) => {
-    setAge(event.target.value);
+        setAge(event.target.value);
     };
 
     const handleLocation = (event) => {
-    setLocation(event.target.value);
+        setLocation(event.target.value);
     };
 
 
-  return (
-    <>
-      <Stack spacing={3}>
-        <TextField name="description" label="Short Advertisement Description" />
-        <FormControl fullWidth>
-            <InputLabel id="demo-simple-select-label">Type of Advertisement</InputLabel>
-            <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                value={type}
-                label="Pricing Model"
-                onChange={handleType}
-            >
-                <MenuItem value={"image"}>Image</MenuItem>
-                <MenuItem value={"video"}>Video</MenuItem>
-            </Select>
-        </FormControl>
-        <FormControl fullWidth>
-            <InputLabel id="demo-simple-select-label">Pricing Model</InputLabel>
-            <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                value={model}
-                label="Pricing Model"
-                onChange={handleModel}
-            >
-                <MenuItem value={"cpc"}>Cost per click</MenuItem>
-                <MenuItem value={"cpm"}>Cost per impression</MenuItem>
-            </Select>
-        </FormControl>
-        <FormControl fullWidth>
-            <InputLabel id="demo-simple-select-label">Target Audience</InputLabel>
-            <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                value={age}
-                label="Pricing Model"
-                onChange={handleAge}
-            >
-                <MenuItem value={"youth"}>Youth</MenuItem>
-                <MenuItem value={"adults"}>Adults</MenuItem>
-                <MenuItem value={"seniors"}>Seniors</MenuItem>
-            </Select>
-        </FormControl>
-        <FormControl fullWidth>
-            <InputLabel id="demo-simple-select-label">Target Location</InputLabel>
-            <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                value={location}
-                label="Pricing Model"
-                onChange={handleLocation}
-            >
-                <MenuItem value={"portugal"}>Portugal</MenuItem>
-                <MenuItem value={"spain"}>Spain</MenuItem>
-                <MenuItem value={"france"}>France</MenuItem>
-                <MenuItem value={"germany"}>Germany</MenuItem>
-                <MenuItem value={"italy"}>Italy</MenuItem>
-                <MenuItem value={"uk"}>United Kingdom</MenuItem>
-                <MenuItem value={"netherlands"}>Netherlands</MenuItem>
-                <MenuItem value={"belgium"}>Belgium</MenuItem>
-                <MenuItem value={"austria"}>Austria</MenuItem>
-                <MenuItem value={"sweeden"}>Sweeden</MenuItem>
-                <MenuItem value={"croatia"}>Croatia</MenuItem>
-                <MenuItem value={"Poland"}>Poland</MenuItem>
-            </Select>
-        </FormControl>
-        <TextField name="link" label="Advertisement url" />
-        
-      </Stack>
+    return (
+        <>
+        <Stack spacing={3}>
+            <TextField name="description" label="Short Advertisement Description" onChange={(e) => setDescription(e.target.value)}/>
+            <FormControl fullWidth>
+                <InputLabel id="demo-simple-select-label">Pricing Model</InputLabel>
+                <Select
+                    labelId="demo-simple-select-label"
+                    id="demo-simple-select"
+                    value={model}
+                    label="Pricing Model"
+                    onChange={handleModel}
+                >
+                    <MenuItem value={"CPC"}>Cost per click</MenuItem>
+                    <MenuItem value={"CPM"}>Cost per impression</MenuItem>
+                </Select>
+            </FormControl>
+            <FormControl fullWidth>
+                <InputLabel id="demo-simple-select-label">Target Audience</InputLabel>
+                <Select
+                    labelId="demo-simple-select-label"
+                    id="demo-simple-select"
+                    value={age}
+                    label="Pricing Model"
+                    onChange={handleAge}
+                >
+                    <MenuItem value={"youth"}>Youth</MenuItem>
+                    <MenuItem value={"adults"}>Adults</MenuItem>
+                    <MenuItem value={"seniors"}>Seniors</MenuItem>
+                </Select>
+            </FormControl>
+            <FormControl fullWidth>
+                <InputLabel id="demo-simple-select-label">Target Location</InputLabel>
+                <Select
+                    labelId="demo-simple-select-label"
+                    id="demo-simple-select"
+                    value={location}
+                    label="Pricing Model"
+                    onChange={handleLocation}
+                >
+                    <MenuItem value={"portugal"}>Portugal</MenuItem>
+                    <MenuItem value={"spain"}>Spain</MenuItem>
+                    <MenuItem value={"france"}>France</MenuItem>
+                    <MenuItem value={"germany"}>Germany</MenuItem>
+                    <MenuItem value={"italy"}>Italy</MenuItem>
+                    <MenuItem value={"uk"}>United Kingdom</MenuItem>
+                    <MenuItem value={"netherlands"}>Netherlands</MenuItem>
+                    <MenuItem value={"belgium"}>Belgium</MenuItem>
+                    <MenuItem value={"austria"}>Austria</MenuItem>
+                    <MenuItem value={"sweeden"}>Sweeden</MenuItem>
+                    <MenuItem value={"croatia"}>Croatia</MenuItem>
+                    <MenuItem value={"Poland"}>Poland</MenuItem>
+                </Select>
+            </FormControl>
+            <TextField name="link" label={model == 'CPC' ? 'Total clicks goal' : 'Total impressions goal'} onChange={(e) => setTarget(e.target.value)}/>
+            <TextField name="link" label="Advertisement url" onChange={(e) => setUrl(e.target.value)}/>
+            
+        </Stack>
 
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ my: 2 }}>
-      </Stack>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ my: 2 }}>
+        </Stack>
 
-      <LoadingButton fullWidth size="large" type="submit" variant="contained" onClick={handleClick} color='info'>
-        Create Advertisement
-      </LoadingButton>
-    </>
-  );
+        <LoadingButton fullWidth size="large" type="submit" variant="contained" onClick={handleClick} color='info'>
+            Create Advertisement
+        </LoadingButton>
+        </>
+    );
 }

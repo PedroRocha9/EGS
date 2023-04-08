@@ -34,6 +34,7 @@ export default function DashboardAppPage() {
     const [avgCpr, setAvgCpr] = useState(0);
     const [bestClickAd, setBestClickAd] = useState(null);
     const [bestImpressionAd, setBestImpressionAd] = useState(null);
+    const [hasData, setHasData] = useState(true);
 
     //on page load, read user from props
 
@@ -61,7 +62,8 @@ export default function DashboardAppPage() {
                         setBestImpressionAd(data.highest_impression_ad);
                     });
                 } else {
-                    alert(response.status);
+                    alert("No data found");
+                    setHasData(false);
                 }
             }
             )
@@ -227,15 +229,19 @@ export default function DashboardAppPage() {
                 list={[
                     {
                     name: bestImpressionAd.description,
+                    url: bestImpressionAd.ad_creative,
                     value: bestImpressionAd.impressions,
-                    icon: "Advertisement ID: " + bestImpressionAd.id,
-                    description: 'Number of impressions',
+                    id: "Advertisement " + bestImpressionAd.id,
+                    description: 'Impressions',
+                    active: bestImpressionAd.active
                     },
                     {
                     name: bestClickAd.description,
+                    url: bestClickAd.ad_creative,
                     value: bestClickAd.clicks,
-                    icon: "Advertisement ID: " + bestClickAd.id,
-                    description: 'Number of clicks',
+                    id: "Advertisement " + bestClickAd.id,
+                    description: 'Clicks',
+                    active: bestClickAd.active
                     },
                 ]}
                 />

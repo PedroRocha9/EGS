@@ -33,7 +33,7 @@ age_groups = ["youth", "adults", "seniors"]
 
 #function to get the token of an user
 def get_token(user):
-    token = hashlib.sha256(str(user[0]).encode('utf-8')).hexdigest() + hashlib.sha256(str(user[2]).encode('utf-8')).hexdigest() \
+    token = hashlib.sha256(str(user[0]).encode('utf-8')).hexdigest() + hashlib.sha256(str(user[3]).encode('utf-8')).hexdigest() \
         + hashlib.sha256(str(user[1]).encode('utf-8')).hexdigest()
     return token
 
@@ -62,11 +62,16 @@ def update_ad(ad_id=None):
             return jsonify({'message': 'Missing required data'}), 400
         
         ad = cur.execute("SELECT * FROM ads WHERE id = ?", (ad_id,)).fetchone()
+        if ad is None:
+            return jsonify({'message': 'Ad not found'}), 404
         if (ad[3] == "CPC"):
-            cur.execute("UPDATE ads SET clicks = ? WHERE id = ?", (ad[8] + 1, ad_id))
+            if(ad[8]+1 == ad[10]):
+                cur.execute("UPDATE ads SET active = ?, clicks = ? WHERE id = ?", (0, ad[8] + 1, ad_id))
+            else:
+                cur.execute("UPDATE ads SET clicks = ? WHERE id = ?", (ad[8] + 1, ad_id))
             conn.commit()
             print("Ad clicked")
-            return redirect(ad[10], code=302)
+            return redirect(ad[12], code=302)
         else:
             return jsonify({'message': 'Ad not found'}), 404
 
@@ -85,9 +90,10 @@ def update_ad(ad_id=None):
                 if user[1] != "A":
                     return jsonify({'message': 'Consumers not authorized'}), 401
                 #check if ad exists and if it belongs to the user
-                ads = cur.execute("SELECT * FROM ads").fetchall()
+                ads = cur.execute("SELECT * FROM ads WHERE user = ?", (user[0],)).fetchall()
                 for ad in ads:
-                    if ad[0] == ad_id and ad[4] == user[0]:
+                    print(str(ad[0]) + " " + str(ad_id))
+                    if str(ad[0]) == str(ad_id):
                         cur.execute("DELETE FROM ads WHERE id = ?", (ad_id,))
                         conn.commit()
                         return jsonify({'message': 'Ad deleted'}), 200
@@ -103,6 +109,7 @@ def get_ads():
     #check if the request is a post or get or delete
     if request.method == 'POST':
         data = request.get_json()
+        token = request.headers.get('Authorization')
         token = token.split(' ')[1]
         #check if user is advertiser
         users = cur.execute("SELECT * FROM users").fetchall()
@@ -111,14 +118,16 @@ def get_ads():
                 if user[1] != "A":
                     return jsonify({'message': 'Consumers not authorized'}), 401
                 #validate data body
-                if 'type' not in data or 'pricing_model' not in data or 'target_audience' not in data or 'ad_creative' not in data or 'description' not in data:
+                if 'pricing_model' not in data or 'age_range' not in data or 'ad_creative' not in data or 'description' not in data or 'location' not in data or 'target' not in data:
                     return jsonify({'message': 'Missing required data'}), 400
                 
                 #create new ad and add it to the user's ads
                 new_id = cur.execute("SELECT MAX(id) FROM ads").fetchone()[0] + 1
-                cur.execute("insert into ads (type, description, pricing_model, age_range, location, ad_creative, impressions, clicks, user) values (?, ?, ?, ?, ?, ?, ?, \?, ?)"\
-                            , (data['type'], data['description'], data['pricing_model'], data['target_audience']['age_range'], data['target_audience']['location'], \
-                               data['ad_creative'], 0, 0, user[0]))
+
+                print(str(new_id) + " on user " + str(user[0]))
+                cur.execute("insert into ads (type, description, pricing_model, age_range, location, ad_creative, impressions, clicks, user, target, active) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                            , ("image", data['description'], data['pricing_model'], data['age_range'], data['location'], 
+                               data['ad_creative'], 0, 0, user[0], data['target'], 1))
                 conn.commit()
                 return jsonify({'id': new_id}), 201
         
@@ -132,6 +141,17 @@ def get_ads():
 
         if publisher_id is None:
             return jsonify({'message': 'Missing required data'}), 400
+        
+        #validade publisher id
+        isvalid = False
+        publishers = cur.execute("SELECT * FROM users WHERE type = ?", ("C",)).fetchall()
+        for publisher in publishers:
+            if str(publisher[0]) == str(publisher_id):
+                isvalid = True
+                break
+
+        if not isvalid:
+            return jsonify({'message': 'Invalid publisher id'}), 400
 
         if age_range not in age_groups and age_range:
             return jsonify({'message': 'Invalid age range'}), 400
@@ -152,7 +172,10 @@ def get_ads():
         ads_to_return = []
         for ad in ads:
             link = "http://localhost:5000/v1/ads/" + str(ad[0])
-            js_code = render_template('ad_href.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2], ad_redirect=link)
+            if ad[3] == "CPC":
+                js_code = render_template('ad_href.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2], ad_redirect=link)
+            else:
+                js_code = render_template('ad.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2])
             ads_to_return.append(js_code)
             cur.execute("UPDATE ads SET impressions = ? WHERE id = ?", (ad[7] + 1, ad[0]))
 
@@ -175,13 +198,15 @@ def create_user():
     emails = cur.execute("SELECT email FROM users").fetchall()
     for email in emails:
         if email[0] == data['email']:
-            return jsonify({'message': 'Email already registered'}), 400
+            return jsonify({'message': 'Email already registered'}), 401
 
     #create new user
     new_id = cur.execute("SELECT MAX(id) FROM users").fetchone()[0] + 1
+    print("New user id: " + str(new_id))
     token = get_token_from_request(new_id, data['email'], data['type'])
+    type = "A" if data['type'] == "advertiser" else "C"
     cur.execute("INSERT INTO users (type, name, email, password, token) VALUES (?, ?, ?, ?, ?)", \
-                 (data['type'], data['name'], data['email'], data['password'], token))
+                 (type, data['name'], data['email'], data['password'], token))
 
     conn.commit()
     return jsonify({'id': new_id}), 201
@@ -212,13 +237,30 @@ def get_profile():
     for user in users:
         if get_token(user) == token:
             user_ads = cur.execute("SELECT * FROM ads WHERE user = ?", (user[0],)).fetchall()
-            print(user_ads)
+            #transform each ad in a json
+            ads_json = []
+            for ad in user_ads:
+                tmp_json = {
+                    'id': ad[0],
+                    'type': ad[1],
+                    'description': ad[2],
+                    'pricing_model': ad[3],
+                    'age_range': ad[4],
+                    'location': ad[5],
+                    'ad_creative': ad[6],
+                    'impressions': ad[7],
+                    'clicks': ad[8],
+                    'user': ad[9],
+                    'target': ad[10],
+                    'active': ad[11]
+                }
+                ads_json.append(tmp_json)
             return jsonify({
                 'id': user[0],
                 'name': user[2],
                 'email': user[3],
                 'type': user[1],
-                'ads': user_ads
+                'ads': ads_json
             }), 200
         
     return jsonify({'message': 'Invalid token'}), 401
@@ -263,18 +305,22 @@ def get_user_analytics(adv_id):
     #validate data
     token = request.headers.get('Authorization')
     if token is None:
+        print("Missing token")
         return jsonify({'message': 'Missing token'}), 401
     token = token.split(' ')[1]
 
     #check if user is advertiser
     if get_account_type(token) != "A":
+        print("Consumers unauthorized")
         return jsonify({'message': 'Consumers unauthorized'}), 401
 
     if adv_id is None:
         return jsonify({'message': 'Missing required data'}), 400
-    
+    print("adv_id: " + str(adv_id))
+    print("token: " + token)
     user = cur.execute("SELECT * FROM users WHERE token = ? AND id = ?", (token, adv_id)).fetchone()
     if user is None:
+        print("Invalid token or ID")
         return jsonify({'message': 'Invalid token or ID'}), 401
     
     ads = cur.execute("SELECT * FROM ads WHERE user = ?", (adv_id,)).fetchall()
@@ -294,8 +340,20 @@ def get_user_analytics(adv_id):
     total_clicks = cur.execute("SELECT SUM(clicks) FROM ads WHERE user = ?", (adv_id,)).fetchone()[0]
 
     #get the total ctr as a float with 2 decimal places
-    total_ctr = round(total_clicks/total_impressions*100, 2)
+    if(total_impressions == 0):
+        total_ctr = 0
+    else:
+        total_ctr = round(total_clicks/total_impressions*100, 2)
 
+    if(highest_impression_ad[7] == 0):
+        highest_impression_ctr = 0
+    else:
+        highest_impression_ctr = round(highest_impression_ad[8]/highest_impression_ad[7]*100, 2)
+
+    if(highest_click_ad[7] == 0):
+        highest_click_ctr = 0
+    else:
+        highest_click_ctr = round(highest_click_ad[8]/highest_click_ad[7]*100, 2)
     return jsonify({
         'highest_impression_ad': {
             'id': highest_impression_ad[0],
@@ -303,7 +361,9 @@ def get_user_analytics(adv_id):
             'model': highest_impression_ad[3],
             'impressions': highest_impression_ad[7],
             'clicks': highest_impression_ad[8],
-            'ctr': round(highest_impression_ad[8]/highest_impression_ad[7]*100, 2)
+            'ctr': highest_impression_ctr,
+            'ad_creative': highest_impression_ad[6],
+            'active': highest_impression_ad[11]
         },
         'highest_click_ad': {
             'id': highest_click_ad[0],
@@ -311,7 +371,9 @@ def get_user_analytics(adv_id):
             'model': highest_click_ad[3],
             'impressions': highest_click_ad[7],
             'clicks': highest_click_ad[8],
-            'ctr': round(highest_click_ad[8]/highest_click_ad[7]*100, 2)
+            'ctr': highest_click_ctr,
+            'ad_creative': highest_click_ad[6],
+            'active': highest_click_ad[11]
         },
         'total_impressions': total_impressions,
         'total_clicks': total_clicks,

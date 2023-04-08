@@ -37,12 +37,13 @@ import { useEffect } from 'react';
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-  { id: 'name', label: 'ID', alignRight: false },
-  { id: 'company', label: 'Description', alignRight: false },
-  { id: 'role', label: 'Type', alignRight: false },
-  { id: 'isVerified', label: 'Pricing model', alignRight: false },
-  { id: 'status', label: 'Status', alignRight: false },
-  { id: '' },
+    { id: 'id', label: 'ID', alignRight: false },
+    { id: 'desc', label: 'Description', alignRight: false },
+    { id: 'model', label: 'Pricing model', alignRight: false },
+    { id: 'impressions', label: 'Impressions', alignRight: false },
+    { id: 'clicks', label: 'Clicks', alignRight: false },
+    { id: 'target', label: 'Goal', alignRight: false },
+    { id: '' },
 ];
 
 // ----------------------------------------------------------------------
@@ -71,12 +72,14 @@ function applySortFilter(array, comparator, query) {
     return a[1] - b[1];
   });
   if (query) {
-    return filter(array, (_user) => _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1);
+    return filter(array, (_user) => _user.description.toLowerCase().indexOf(query.toLowerCase()) !== -1);
   }
   return stabilizedThis.map((el) => el[0]);
 }
 
 export default function UserPage() {
+
+    const [ads, setAds] = useState([]);
 
     const navigate = useNavigate();
 
@@ -85,6 +88,18 @@ export default function UserPage() {
     useEffect(() => {
         if (localStorage.getItem('email') != null) {
             console.log(localStorage.getItem('email') + " is logged in");
+            fetch('http://localhost:5000/v1/profile', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token').replace(/['"]+/g, ''),
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.ads);
+                setAds(data.ads);
+            });
         }
         else {
             console.log("no user");
@@ -126,26 +141,11 @@ export default function UserPage() {
 
     const handleSelectAllClick = (event) => {
         if (event.target.checked) {
-        const newSelecteds = USERLIST.map((n) => n.name);
+        const newSelecteds = ads.map((n) => n.name);
         setSelected(newSelecteds);
         return;
         }
         setSelected([]);
-    };
-
-    const handleClick = (event, name) => {
-        const selectedIndex = selected.indexOf(name);
-        let newSelected = [];
-        if (selectedIndex === -1) {
-        newSelected = newSelected.concat(selected, name);
-        } else if (selectedIndex === 0) {
-        newSelected = newSelected.concat(selected.slice(1));
-        } else if (selectedIndex === selected.length - 1) {
-        newSelected = newSelected.concat(selected.slice(0, -1));
-        } else if (selectedIndex > 0) {
-        newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1));
-        }
-        setSelected(newSelected);
     };
 
     const handleChangePage = (event, newPage) => {
@@ -166,15 +166,44 @@ export default function UserPage() {
         window.location.href = '/new-ad';
         };
 
-        const handleDeleteAd = () => {
-            console.log(id + " deleted");
-        };
+    const handleDeleteAd = () => {
+        fetch('http://localhost:5000/v1/ads/' + id, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('token').replace(/['"]+/g, ''),
+            },
+        })
+        .then((response) => {
+            if (response.status === 200) {
+                console.log("deleted");
+                fetch('http://localhost:5000/v1/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token').replace(/['"]+/g, ''),
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.ads);
+                    setAds(data.ads);
+                });
+            } else {
+                console.log("error");
+            }
+        }
+        )
 
-    const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - USERLIST.length) : 0;
+        handleCloseMenu();
+        
+    };
 
-    const filteredUsers = applySortFilter(USERLIST, getComparator(order, orderBy), filterName);
+    const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - ads.length) : 0;
 
-    const isNotFound = !filteredUsers.length && !!filterName;
+    const filteredAds = applySortFilter(ads, getComparator(order, orderBy), filterName);
+
+    const isNotFound = !filteredAds.length && !!filterName;
 
     return (
         <>
@@ -183,7 +212,7 @@ export default function UserPage() {
         </Helmet>
 
         <Container>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={6}>
             <Typography variant="h4" gutterBottom>
                 Management
             </Typography>
@@ -202,45 +231,36 @@ export default function UserPage() {
                     order={order}
                     orderBy={orderBy}
                     headLabel={TABLE_HEAD}
-                    rowCount={USERLIST.length}
+                    rowCount={ads.length}
                     numSelected={selected.length}
                     onRequestSort={handleRequestSort}
                     onSelectAllClick={handleSelectAllClick}
                     />
                     <TableBody>
-                    {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                        const { id, name, role, status, company, avatarUrl, isVerified } = row;
-                        const selectedUser = selected.indexOf(name) !== -1;
+                    {filteredAds.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                        const { id, description, pricing_model, impressions, clicks, target } = row;
 
                         return (
                         <TableRow hover key={id} tabIndex={-1}>
                             <TableCell padding="checkbox">
-                            {/* <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} /> */}
                             </TableCell>
 
-                            <TableCell component="th" scope="row" padding="none">
-                            <Stack direction="row" alignItems="center" spacing={2}>
-                                {/* <Avatar alt={name} src={avatarUrl} /> */}
-                                <Typography variant="subtitle2" noWrap>
-                                {name}
-                                </Typography>
-                            </Stack>
-                            </TableCell>
+                            <TableCell align="left">{id}</TableCell>
 
-                            <TableCell align="left">{company}</TableCell>
+                            <TableCell align="left">{description}</TableCell>
 
-                            <TableCell align="left">{role}</TableCell>
+                            <TableCell align="left">{pricing_model}</TableCell>
 
-                            <TableCell align="left">{isVerified ? 'Yes' : 'No'}</TableCell>
+                            <TableCell align="left">{impressions}</TableCell>
 
-                            <TableCell align="left">
-                            <Label color={status === 'complete' ? 'secondary' : status === 'success' ? 'success': 'success'}>{sentenceCase(status)}</Label>
-                            </TableCell>
+                            <TableCell align="left">{clicks}</TableCell>
+
+                            <TableCell align="left">{target}</TableCell>
 
                             <TableCell align="right">
-                            <IconButton size="large" color="inherit" onClick={(event) => handleOpenMenu(event, name)}>
-                                <Iconify icon={'eva:more-vertical-fill'} />
-                            </IconButton>
+                                <IconButton size="large" color="inherit" onClick={(event) => handleOpenMenu(event, id)}>
+                                    <Iconify icon={'eva:more-vertical-fill'} />
+                                </IconButton>
                             </TableCell>
                         </TableRow>
                         );
@@ -282,7 +302,7 @@ export default function UserPage() {
             <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
                 component="div"
-                count={USERLIST.length}
+                count={ads.length}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}

@@ -25,12 +25,27 @@ ShopProductCard.propTypes = {
 };
 
 export default function ShopProductCard({ product }) {
-  const { name, cover, price, colors, status, priceSale } = product;
+  const { active, description, ad_creative, impressions, clicks } = product;
 
   return (
     <Card>
       <Box sx={{ pt: '100%', position: 'relative' }}>
-        {status === 'completed' && (
+        {active === 1 && (
+          <Label
+            variant="filled"
+            color={'warning'}
+            sx={{
+              zIndex: 9,
+              top: 16,
+              right: 16,
+              position: 'absolute',
+              textTransform: 'uppercase',
+            }}
+          >
+            {'Active'}
+          </Label>
+        )}
+        {active === 0 && (
           <Label
             variant="filled"
             color={'info'}
@@ -42,16 +57,16 @@ export default function ShopProductCard({ product }) {
               textTransform: 'uppercase',
             }}
           >
-            {status }
+            {'Completed'}
           </Label>
         )}
-        <StyledProductImg alt={name} src={cover} />
+        <StyledProductImg alt={description} src={ad_creative} />
       </Box>
 
       <Stack spacing={2} sx={{ p: 3 }}>
         <Link color="inherit" underline="hover">
           <Typography variant="subtitle2" noWrap>
-            {name}
+            {description}
           </Typography>
         </Link>
 
@@ -59,11 +74,11 @@ export default function ShopProductCard({ product }) {
           {/* <ColorPreview colors={colors} /> */}
           <Typography variant="subtitle1" color= 'grey'>
             &nbsp;
-            {price + ' views'}
+            {impressions + ' views'}
           </Typography>
           <Typography variant="subtitle1">
             &nbsp;
-            {price+ ' clicks'}
+            {clicks+ ' clicks'}
           </Typography>
         </Stack>
       </Stack>
