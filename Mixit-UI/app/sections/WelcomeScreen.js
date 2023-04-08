@@ -39,8 +39,8 @@ function WelcomeScreen(props) {
 
             <TouchableOpacity 
                 style={styles.loginButton}
-                // onPress={() => console.log('Login button pressed')}
-                onPress={toLogin}
+                onPress={() => console.log('Login button pressed')}
+                // onPress={toLogin}
                 >
                 <Text style={styles.loginText}>
                     Login
