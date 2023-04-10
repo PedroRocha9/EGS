@@ -1,29 +1,44 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, Text, TextInput, View, Image } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, Text, TextInput, View, Image } from 'react-native';
+import { useState } from 'react';
 
 function Tweet({ user, text, imageUrl }) {
+
+  const [liked, setLiked] = useState(false);
+
+  const handleLike = () => {
+    setLiked(!liked);
+  };
+
   return (
     <View style={styles.tweet}>
+
       <View style={styles.userInfo}>
         <Text style={styles.username}>{user}</Text>
         <Image source={require('../assets/profile-placeholder.png')} style={styles.avatar}/>
       </View>
+
       <View style={styles.tweetContent}>
         <Text style={styles.text}>{text}</Text>
         {imageUrl && <Image source={{ uri: imageUrl }} style={styles.image}/>}
       </View>
+
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionButtonText}>Like</Text>
+        <TouchableOpacity style={styles.actionButton} >
+            <Image source={require('../assets/thumbs-up.png')} style={[styles.like, {backgroundColor: liked ? "#6BD288" : "#DBDBDB"} ]} onPress={handleLike}/>
         </TouchableOpacity>
+
         <TouchableOpacity style={styles.actionButton}>
           <Text style={styles.actionButtonText}>Dislike</Text>
         </TouchableOpacity>
+
         <TouchableOpacity style={styles.actionButton}>
           <Text style={styles.actionButtonText}>Comment</Text>
         </TouchableOpacity>
+
         <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionButtonText}>Share</Text>
+           {/* Share icon */}
+           <Image source={require('../assets/share.png')} style={styles.share}/>
         </TouchableOpacity>
       </View>
     </View>
@@ -32,7 +47,7 @@ function Tweet({ user, text, imageUrl }) {
 
 function Home(props) {
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       {/* Top bar */}
       <View style={styles.topBar}>
         {/* Search */}
@@ -55,14 +70,14 @@ function Home(props) {
         <View style={styles.separator}/>
         <Tweet user="@jack" text="Excited to announce the launch of our new app! 🎉📱" imageUrl="https://picsum.photos/400/300"/>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#DBDBDB',
+    backgroundColor: '#2d2d2d',
   },
   topBar: {
     backgroundColor: '#1B1B1B',
@@ -79,7 +94,6 @@ const styles = StyleSheet.create({
   logo: {
     width: 100,
     height: 100,
-    tintColor: '#dbdbdb',
   },
   notifications: {
     width: 30,
@@ -92,7 +106,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   tweet: {
-    backgroundColor: '#fff',
+    backgroundColor: '#2d2d2d',
     borderRadius: 10,
     padding: 10,
   },
@@ -106,43 +120,63 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     marginRight: 10,
-    },
-    username: {
+    marginLeft: 10,
+  },
+  username: {
     fontWeight: 'bold',
     fontSize: 16,
-    },
-    tweetContent: {
+    color: '#fff',
+  },
+  tweetContent: {
     marginBottom: 10,
-    },
-    text: {
+  },
+  text: {
     fontSize: 16,
-    },
-    image: {
+    color: '#fff',
+  },
+  image: {
     width: '100%',
     height: 200,
     borderRadius: 10,
     marginTop: 10,
     resizeMode: 'cover',
-    },
-    actions: {
+  },
+  actions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    },
-    actionButton: {
+    backgroundColor: '#2d2d2d',
+  },
+  actionButton: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
     borderRadius: 10,
-    backgroundColor: '#DBDBDB',
+    backgroundColor: '#2d2d2d',
     marginHorizontal: 5,
-    },
-    actionButtonText: {
+  },
+  actionButtonText: {
     fontWeight: 'bold',
     fontSize: 16,
-    },
-    separator: {
+    color: '#fff',
+  },
+
+  like: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    backgroundColor: '#2d2d2d',
+    tintColor: '#2d2d2d',
+    marginHorizontal: 5,
+    width: 24,
+    height: 24,
+  },
+
+  separator: {
     height: 10,
-    },
+  },
     });
     
     export default Home;
