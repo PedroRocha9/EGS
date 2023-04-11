@@ -34,7 +34,7 @@ function WelcomeScreen({navigation}) {
 
             {/* Founders names */}
             <Text style={styles.founders}>
-                By: Pedro Rocha, André Clérigo, João Amaral e João Viegas
+                By: Pedro Rocha, André Clérigo, João Amaral and João Viegas
             </Text>
 
             <TouchableOpacity 

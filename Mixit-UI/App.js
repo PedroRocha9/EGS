@@ -1,11 +1,9 @@
 import React from 'react';
 
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Image } from 'react-native';
+import { StyleSheet} from 'react-native';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import AppNavigator from './app/appNavigation';
 
 import WelcomeScreen from './app/sections/WelcomeScreen';
 import Login from './app/sections/Login';
