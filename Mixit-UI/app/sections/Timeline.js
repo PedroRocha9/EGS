@@ -3,13 +3,6 @@ import { ScrollView, StyleSheet, TouchableOpacity, Text, TextInput, View, Image 
 import { useState } from 'react';
 
 function Tweet({ user, text, imageUrl }) {
-
-  const [liked, setLiked] = useState(false);
-
-  const handleLike = () => {
-    setLiked(!liked);
-  };
-
   return (
     <View style={styles.tweet}>
 
@@ -25,7 +18,7 @@ function Tweet({ user, text, imageUrl }) {
 
       <View style={styles.actions}>
         <TouchableOpacity style={styles.actionButton} >
-            <Image source={require('../assets/thumbs-up.png')} style={[styles.like, {backgroundColor: liked ? "#6BD288" : "#DBDBDB"} ]} onPress={handleLike}/>
+            <Image source={require('../assets/thumbs-up.png')}/>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton}>
@@ -45,13 +38,13 @@ function Tweet({ user, text, imageUrl }) {
   );
 }
 
-function Home(props) {
+function Home({navigation}) {
   return (
     <ScrollView style={styles.container}>
       {/* Top bar */}
       <View style={styles.topBar}>
         {/* Search */}
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Search')}>
           <Image source={require('../assets/search.png')} style={styles.search}/>
         </TouchableOpacity>
         {/* Logo */}
@@ -69,6 +62,8 @@ function Home(props) {
         <Tweet user="@janedoe" text="Can't wait for the weekend!" />
         <View style={styles.separator}/>
         <Tweet user="@jack" text="Excited to announce the launch of our new app! 🎉📱" imageUrl="https://picsum.photos/400/300"/>
+        <View style={styles.separator}/>
+        <Tweet user="@jack" text="Is it friday already?" />
       </View>
     </ScrollView>
   );

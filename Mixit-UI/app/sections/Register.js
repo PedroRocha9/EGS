@@ -3,9 +3,9 @@ import { SafeAreaView } from 'react-native';
 import { StyleSheet, TouchableOpacity, Text, TextInput, View, Image, StatusBar } from 'react-native';
 
 //TODO
-// lots of things to do here: access authentication service
+// lots of things to do here -> access authentication service
 
-function Register(props) {
+function Register({navigation}) {
     return (
         <View style={styles.containerGeneric}>
             <View style={styles.containerTopBar}>
@@ -30,9 +30,15 @@ function Register(props) {
                 <TextInput style={styles.inputUser} placeholder="Username"/>
                 <Text style={[styles.passwordText, {marginTop: 20}]}>Password</Text>
                 <TextInput style={styles.inputPass} placeholder="Password" secureTextEntry={true}/>
-                <TouchableOpacity style={styles.registerButton}>
-                    <Text style={styles.registerButtonText}>Register</Text>
+                <Text style={[styles.passwordText, {marginTop: 12}]}>Repeat Password</Text>
+                <TextInput style={styles.inputPass} placeholder="Repeat Password" secureTextEntry={true}/>
 
+                <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('Timeline')}>
+                    <Text style={styles.registerButtonText}>Register</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                    <Text style={styles.haveAccountText}>I already have an account!</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -106,7 +112,7 @@ const styles = StyleSheet.create({
         width: 300,
         height: 40,
         borderRadius: 10,
-        marginBottom: 80,
+        marginBottom: 20,
         paddingLeft: 10,
     },
     registerButton: {
@@ -116,11 +122,18 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: 20,
     },
     registerButtonText: {
         color: '#dbdbdb',
         fontSize: 20,
         fontWeight: 'bold',
+    },
+    haveAccountText: {
+        color: '#dbdbdb',
+        fontSize: 16,
+        marginTop: 20,
+        textDecorationLine: 'underline',
     },
 });
 

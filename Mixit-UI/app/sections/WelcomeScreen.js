@@ -8,7 +8,7 @@ import { StyleSheet, Image, Text, View, TouchableOpacity} from 'react-native';
 
 
 // function WelcomeScreen(props: WelcomeScreenProps) {
-function WelcomeScreen(props) {
+function WelcomeScreen({navigation}) {
 
     // const toLogin = () => {
     //     props.navigation.navigate("Login");
@@ -39,8 +39,7 @@ function WelcomeScreen(props) {
 
             <TouchableOpacity 
                 style={styles.loginButton}
-                onPress={() => console.log('Login button pressed')}
-                // onPress={toLogin}
+                onPress={() => navigation.navigate('Login')}
                 >
                 <Text style={styles.loginText}>
                     Login
@@ -49,7 +48,7 @@ function WelcomeScreen(props) {
                 
             <TouchableOpacity 
                 style={styles.registerButton}
-                onPress={() => console.log('Register button pressed')}
+                onPress={() => navigation.navigate('Register')}
                 >
                 <Text style={styles.registerText}>
                     Register

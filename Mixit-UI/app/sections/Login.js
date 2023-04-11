@@ -2,7 +2,7 @@ import React from 'react';
 import { SafeAreaView } from 'react-native';
 import { StyleSheet, TouchableOpacity, Text, TextInput, View, Image, StatusBar } from 'react-native';
 
-function Login(props) {
+function Login({navigation}) {
     return (
         <View style={styles.containerGeneric}>
             <View style={styles.containerTopBar}>
@@ -18,18 +18,23 @@ function Login(props) {
                 </TouchableOpacity>
             </View>
 
-            
-
             <View style={styles.containerLoginArea}>
                 {/* Logo image */}
                 <Image source={require('../assets/mixit_x.png')} style={styles.smallLogo}/>
+                
                 <Text style={styles.loginText}>Username</Text>
                 <TextInput style={styles.inputUser} placeholder="Username"/>
+                
                 <Text style={[styles.passwordText, {marginTop: 20}]}>Password</Text>
                 <TextInput style={styles.inputPass} placeholder="Password" secureTextEntry={true}/>
-                <TouchableOpacity style={styles.loginButton}>
+                
+                <TouchableOpacity style={styles.loginButton} 
+                onPress={() => navigation.navigate('Timeline')}>
                     <Text style={styles.loginButtonText}>Login</Text>
+                </TouchableOpacity>
 
+                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                    <Text style={styles.createAccountText}>I don't have an account yet!</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -118,6 +123,12 @@ const styles = StyleSheet.create({
         color: '#dbdbdb',
         fontSize: 20,
         fontWeight: 'bold',
+    },
+    createAccountText: {
+        color: '#dbdbdb',
+        fontSize: 16,
+        marginTop: 20,
+        textDecorationLine: 'underline',
     },
 });
 
