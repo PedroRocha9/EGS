@@ -8,8 +8,7 @@ const startWorker = () => {
   
   periodicQueue.process(async (job) => {
     console.log('Consumed periodic update queue process');
-    // console.log(job.data);
-    periodicUpdateCacheFromAPI(job.data); 
+    //periodicUpdateCacheFromAPI(job.data); 
   });
 };
 

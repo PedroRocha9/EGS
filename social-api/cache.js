@@ -8,6 +8,7 @@ const updateQueue = 'cache_update';
 const setQueue = 'cache_set';
 
 
+// Fetch information from the redis cache
 const fetchFromCache = async (key, id, twitterQuery, next_token) => {
   const message = { key, id, twitterQuery, next_token };
 
@@ -18,7 +19,6 @@ const fetchFromCache = async (key, id, twitterQuery, next_token) => {
     if (next_token === undefined) {
       cachedResult = await redisClient.get(`${key}:${id}`);
     } else {
-      console.log('aqui');
       cachedResult = await redisClient.get(`${key}:${id}:${next_token}`);
     }
     
@@ -41,6 +41,7 @@ const fetchFromCache = async (key, id, twitterQuery, next_token) => {
   return JSON.stringify(twitterApiResponse);
 };
 
+// Delete information from the redis cache
 const deleteFromCache = async (id) => {
   try {
     const keys = await redisClient.keys(`*:${id}*`);
@@ -51,6 +52,7 @@ const deleteFromCache = async (id) => {
   }
 };
 
+// Update the cache using up-to-date information from the Twitter API
 const updateCacheFromAPI = async (message, channel) => {
   // Extract information from the message
   const { key, id, twitterQuery, next_token } = JSON.parse(message.content.toString());
@@ -72,8 +74,8 @@ const updateCacheFromAPI = async (message, channel) => {
   periodicQueue.add({ key, id, twitterQuery, next_token }, {
     // WATCHOUT FOR RATE LIMIT
     repeat: {
-      every: 10000,     // Every 10 seconds
-      limit: 1          // 1 time
+      every: 30000,     // Every 30 seconds
+      limit: 2          // 2q time
     }
   });
 
@@ -81,6 +83,7 @@ const updateCacheFromAPI = async (message, channel) => {
   channel.ack(message);
 };
 
+// Set the cache with already fetched information from the Twitter API
 const updateCacheWithValue = async (message, channel) => {
   // Extract information from the message
   const { key, id, twitterApiResponse, next_token } = JSON.parse(message.content.toString());
@@ -99,6 +102,7 @@ const updateCacheWithValue = async (message, channel) => {
   channel.ack(message);
 };
 
+// Update the cache using up-to-date information from the Twitter API periodically
 const periodicUpdateCacheFromAPI = async (data) => {
   // Extract information from the message
   const { key, id, twitterQuery, next_token } = data;
@@ -120,6 +124,7 @@ const periodicUpdateCacheFromAPI = async (data) => {
 
 
 /* Message Broker definitions */
+// Producer function
 const publishMessage = async (message, queueName) => {
   try {
     // Connect to RabbitMQ
@@ -143,6 +148,7 @@ const publishMessage = async (message, queueName) => {
   }
 };
 
+// Consumer function
 const startConsumer = async () => {
 	try {
     // Connect to RabbitMQ
@@ -165,6 +171,7 @@ const startConsumer = async () => {
 		console.error('RabbitMQ had an error starting the consumer', error);
 	}
 };
+
 
 /* Start the redis client and broker consumer */
 const redisClient = redis.createClient();

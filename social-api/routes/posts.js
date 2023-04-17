@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { handleUserPostResponse } = require('../responses');
+const { handleUserPostResponse, handleTimelineResponse, handlePostResponse, handlePostRepliesResponse } = require('../responses');
 
 
 /**
@@ -47,18 +47,132 @@ router.get("/users/:uuid", async (req, res) => {
 
 /**
  * @swagger
- * /v1/users/{uuid}/timeline:
+ * /v1/posts/{uuid}/timeline:
+ *  get:
+ *      summary: Returns the home timeline for a user specified by the requested UUID.
+ *      tags: [Posts]
+ *      parameters:
+ *          - in: path
+ *            name: uuid
+ *            schema:
+ *              type: string
+ *            required: true
+ *            description: The UID of the user in mixit platform
+ *          - in: query
+ *            name: next_token
+ *            schema:
+ *              type: string
+ *            description: The fields can contain the next_token if to get the next "set" of posts.
+ *      responses:
+ *          200:
+ *              description: List of Posts Object
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/Post'                            
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: User not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'       
  */
+router.get("/:uuid/timeline", async (req, res) => {
+    await handleTimelineResponse(req, res);
+});
 
 /**
  * @swagger
- * /v1/posts/{id}
+ * /v1/posts/{id}:
+ *  get:
+ *      summary: Returns detailed information about a post using it's ID.
+ *      tags: [Posts]
+ *      parameters:
+ *          - in: path
+ *            name: id
+ *            schema:
+ *              type: string
+ *            required: true
+ *            description: The ID of the post
+ *      responses:
+ *          200:
+ *              description: List of Posts Object
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/Post'                            
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: Post not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
  */
+router.get("/:id", async (req, res) => {
+    await handlePostResponse(req, res);
+});
+
+/**
+ * @swagger
+ * /v1/posts/{id}/replies:
+ *  get:
+ *      summary: Returns a list of replie tweets, specified by the requested UID. This will only work for recent tweets.
+ *      tags: [Posts]
+ *      parameters:
+ *          - in: path
+ *            name: id
+ *            schema:
+ *              type: string
+ *            required: true
+ *            description: The ID of the post
+ *          - in: query
+ *            name: next_token
+ *            schema:
+ *              type: string
+ *            description: The fields can contain the next_token if to get the next "set" of posts.
+ *      responses:
+ *          200:
+ *              description: List of Posts Object
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/OriginalPost'                            
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: Replies not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
+ */
+router.get("/:id/replies", async (req, res) => {
+    await handlePostRepliesResponse(req, res);
+});
 
 /**
  * @swagger
  * /v1/posts/:id/liking_users
  */
+router.get("/:id/liking_users", async (req, res) => {
+    await handlePostLikingUsersResponse(req, res);
+});
 
 
 module.exports = router;

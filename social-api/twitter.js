@@ -25,12 +25,27 @@ const fetchFromTwitter = async (key, id, query, next_token) => {
     }
 
     if (key === "user_tweets") {
-      const twitterTweetsResult = await fetchUserTweetsFromTwitter(id, query, next_token);
+      const twitterTweetsResult = await fetchUserTweetsFromTwitter(id, next_token);
       twitterApiResponse = twitterTweetsResult;
     }
 
+    if (key === "timeline") {
+      const twitterTimelineResult = await fetchTimelineFromTwitter(id, next_token);
+      twitterApiResponse = twitterTimelineResult;
+    }
+
+    if (key == "tweet") {
+      const twitterTweetResult = await fetchTweetFromTwtitter(id);
+      twitterApiResponse = twitterTweetResult;
+    }
+
+    if (key == "replies") {
+      const twitterTweetResult = await fetchTweetRepliesFromTwitter(id, next_token);
+      twitterApiResponse = twitterTweetResult;
+    }
+
     return twitterApiResponse;
- } catch(error) {
+ } catch (error) {
     console.log('Twitter API had an error with the returned response', error);
   }
 };
@@ -67,52 +82,24 @@ const fetchFollowingFromTwitter = async (id, query, next_token) => {
   }
 };
 
-const fetchUserTweetsFromTwitter = async (id, query, next_token) => {
-  let queries = { exclude: 'replies', expansions: 'attachments.media_keys', 'media.fields': ['url', 'preview_image_url']};
+const fetchUserTweetsFromTwitter = async (id, next_token) => {
+  let queries = { 
+    'expansions': ['attachments.media_keys', 'author_id', 'referenced_tweets.id'],
+    'media.fields': ['url', 'preview_image_url'],
+    'user.fields': ['profile_image_url', 'username'],
+    'tweet.fields': ['public_metrics', 'created_at', 'conversation_id']
+  };
+
   try {
     if (next_token !== undefined) queries = { ...queries, 'pagination_token': next_token };
     const userTweets = await readOnlyClient.v2.userTimeline(id, queries);
 
     // Iterate over tweets
-    userTweets.data.data.forEach(tweet => {
-      // If tweet has media
-      if ('attachments' in tweet) {
-        // Iterate over media keys
-        tweet.attachments.media_keys.forEach(key => {
-          // Get media object
-          const media = userTweets.includes.media.find(media => media.media_key === key);
-          // If media is a video
-          // if (media.type === 'video') {
-          //   // Get video info
-          //   const videoInfo = await readOnlyClient.v2.media(media.media_key);
-          //   // Add video info to tweet
-          //   tweet.videoInfo = videoInfo;
-          // }
-          if (media.type === 'video') {
-            // Add video url to tweet
-            if ("preview_urls" in tweet) {
-              tweet.preview_urls.push(media.preview_image_url);
-            } else {
-              tweet.preview_urls = [media.preview_image_url];
-            }
-          }
+    const parsedTweets = await Promise.all(userTweets.data.data.map(async tweet => {
+      return await parseTweetsData(tweet, userTweets, false);
+    }));
 
-          // If media is a photo
-          if (media.type === 'photo') {
-            // Add photo url to tweet
-            if ("photo_urls" in tweet) {
-              tweet.photo_urls.push(media.url);
-            } else {
-              tweet.photo_urls = [media.url];
-            }
-          }
-        });
-      }
-      
-      // Remove attachments and edit history from tweet
-      delete tweet.attachments;
-      delete tweet.edit_history_tweet_ids;
-    });
+    userTweets.data.data = parsedTweets;
 
     // Remove unwanted meta information
     delete userTweets.meta.newest_id;
@@ -128,7 +115,168 @@ const fetchUserTweetsFromTwitter = async (id, query, next_token) => {
   }
 };
 
+const fetchTimelineFromTwitter = async (id, next_token) => {
+  let queries = {
+    'expansions': ['attachments.media_keys', 'author_id', 'referenced_tweets.id'],
+    'media.fields': ['url', 'preview_image_url'],
+    'user.fields': ['profile_image_url', 'username'],
+    'tweet.fields': ['public_metrics', 'created_at', 'conversation_id']
+  };
+
+  try {
+    if (next_token !== undefined) queries = { ...queries, 'pagination_token': next_token };
+    const homeTimeline = await userClient.v2.homeTimeline(queries);
+
+    // Iterate over tweets
+    for (let i = 0; i < homeTimeline.data.data.length; i++) {
+      homeTimeline.data.data[i] = await parseTweetsData(homeTimeline.data.data[i], homeTimeline, false);
+    }
+
+    // Remove unwanted meta information
+    delete homeTimeline.meta.newest_id;
+    delete homeTimeline.meta.oldest_id;
+    delete homeTimeline.meta.result_count;
+    
+    let tweets = { data: homeTimeline.data.data};
+    if ('next_token' in homeTimeline.meta) tweets.next_token = homeTimeline.meta.next_token;
+    
+    return tweets;
+  } catch (error) {
+    console.log('Twitter API had an error while fetching info', error);
+  }
+}
+
+const fetchTweetFromTwtitter = async (id) => {
+  try {
+    let tweet = await readOnlyClient.v2.singleTweet(id, { 
+      'expansions': ['attachments.media_keys', 'author_id', 'referenced_tweets.id'],
+      'media.fields': ['url', 'preview_image_url'],
+      'user.fields': ['profile_image_url', 'username'],
+      'tweet.fields': ['public_metrics', 'created_at', 'conversation_id']
+    });
+
+    tweet = parseTweetsData(tweet.data, tweet, false);
+
+    return tweet
+  } catch (error) {
+    console.log('Twitter API had an error while fetching info', error);
+  }
+}
+
+const fetchOriginalTweetFromTwtitter = async (id) => {
+  try {
+    let tweet = await readOnlyClient.v2.singleTweet(id, { 
+      'expansions': ['attachments.media_keys', 'author_id', 'referenced_tweets.id'],
+      'media.fields': ['url', 'preview_image_url'],
+      'user.fields': ['profile_image_url', 'username'],
+      'tweet.fields': ['public_metrics', 'created_at', 'conversation_id']
+    });
+
+    tweet = parseTweetsData(tweet.data, tweet, true);
+
+    return tweet
+  } catch (error) {
+    console.log('Twitter API had an error while fetching info', error);
+  }
+}
+
+const fetchTweetRepliesFromTwitter = async (id, next_token) => {
+  let queries = { 
+    'expansions': ['attachments.media_keys', 'author_id'],
+    'media.fields': ['url', 'preview_image_url'],
+    'user.fields': ['profile_image_url', 'username'],
+    'tweet.fields': ['public_metrics', 'created_at']
+  };
+
+  try {
+    if (next_token !== undefined) queries = { ...queries, 'pagination_token': next_token };
+    let replies = await readOnlyClient.v2.search('conversation_id:' + id, queries);
+
+    // no replies found
+    if (Object.keys(replies.data).length < 2) return { data : [] };
+
+    // Iterate over tweets
+    for (let i = 0; i < replies.data.data.length; i++) {
+      replies.data.data[i] = await parseTweetsData(replies.data.data[i], replies);
+    }
+
+    // Remove unwanted meta information
+    delete replies.meta.newest_id;
+    delete replies.meta.oldest_id;
+    delete replies.meta.result_count;
+    
+    let tweets = { data: replies.data.data};
+    if ('next_token' in replies.meta) tweets.next_token = replies.meta.next_token;
+    
+    return tweets;
+  } catch (error) {
+    console.log('Twitter API had an error while fetching info', error);
+  }
+}
+
+const parseTweetsData = async (tweet, tweetBase, original) => {
+  try {
+    if ('attachments' in tweet) {
+      tweet.attachments.media_keys.forEach(key => {
+        // Get media object
+        const media = tweetBase.includes.media.find(media => media.media_key === key);
+        if (media.type === 'video') {
+          // Add video url to tweet
+          if ("preview_urls" in tweet) {
+            tweet.preview_urls.push(media.preview_image_url);
+          } else {
+            tweet.preview_urls = [media.preview_image_url];
+          }
+        }
+
+        // If media is a photo
+        if (media.type === 'photo') {
+          // Add photo url to tweet
+          if ("photo_urls" in tweet) {
+            tweet.photo_urls.push(media.url);
+          } else {
+            tweet.photo_urls = [media.url];
+          }
+        }
+      });
+    }
+
+    // Add referenced tweet information if it's a quote tweet
+    if ('referenced_tweets' in tweet && !original) {
+      // console.log('referenced_tweets');
+      const originalTweet = await fetchOriginalTweetFromTwtitter(tweet.referenced_tweets[0].id);
+      // console.log('originalTweet');
+      // console.log(originalTweet);
+
+      tweet.referenced_tweet = { originalTweet };
+      delete tweet.referenced_tweets;
+    }
+    
+    tweet.author_info = {};
+    tweet.author_info.username = tweetBase.includes.users[0].username;
+    tweet.author_info.name = tweetBase.includes.users[0].name;
+    tweet.author_info.profile_image = tweetBase.includes.users[0].profile_image_url;
+  
+    delete tweet.author_id;
+    delete tweet.edit_history_tweet_ids;
+    delete tweet.attachments;
+  
+    // console.log('tweet');
+    // console.log(tweet);
+    return tweet;
+  } catch (error) {
+    console.log('Twitter API had an error while fetching info', error);
+  }
+}
+
 const twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
 const readOnlyClient = twitterClient.readOnly;
+const userClient =  new TwitterApi({
+  appKey: process.env.TWITTER_CONSUMER_KEY,
+  appSecret: process.env.TWITTER_CONSUMER_SECRET,
+  accessToken: process.env.TWITTER_ACCESS_TOKEN,
+  accessSecret: process.env.TWITTER_TOKEN_SECRET,
+});
+
 
 module.exports = { fetchFromTwitter };
