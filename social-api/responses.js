@@ -312,7 +312,6 @@ const handlePostResponse = async (req, res) => {
   }
 };
 
-
 // Get the tweet endpoint handler
 const handlePostRepliesResponse = async (req, res) => {
   const param = Object.keys(req.params)[0];
@@ -334,6 +333,37 @@ const handlePostRepliesResponse = async (req, res) => {
 
     if ((JSON.parse(tweets).data).length === 0) {
       noRepliesFoundHandler(req, res, param);
+      return;
+    }
+
+    return res.status(200).json(JSON.parse(tweets));
+  } catch (error) {
+    console.log(error);   // Debugging purposes
+    return res.status(500).json({ errors: "Internal server error" });
+  }
+};
+
+// Get the users that liked the tweet endpoint handler
+const handlePostLikingUsersResponse = async (req, res) => {
+  const param = Object.keys(req.params)[0];
+  let next_token = req.query;
+
+  try {
+    const queryHandlerResult = await queryHandler(req, res, ["next_token"], {"next_token": [req.query[Object.keys(req.query)]]});
+    if (queryHandlerResult === 'response_sent') return;
+
+    const invalidTweetResult = await invalidTweetIdHandler(req, res, param);
+    if (invalidTweetResult === 'response_sent') return;
+
+    if (Object.keys(req.query).length === 0)
+      next_token = undefined;
+    else
+      next_token = next_token.next_token;
+
+    const tweets = await fetchFromCache('liking_users', req.params[param], {'user.fields':  'profile_image_url'}, next_token);
+
+    if ((JSON.parse(tweets).data).length === 0) {
+      noLikingUsersFoundHandler(req, res, param);
       return;
     }
 
@@ -436,6 +466,20 @@ const noRepliesFoundHandler = async (req, res, param) => {
   });
 };
 
+const noLikingUsersFoundHandler = async (req, res, param) => {
+  res.status(404).json({
+    errors: [{
+      parameters: {
+        value: [req.params[param]]
+      }
+    }],
+    detail: "Could not find users that liked the tweet: [" + req.params[param] + "].",
+    title: "Not Found Error",
+    parameter: param,
+    resource_type: "liking_users"
+  });
+};
+
 const userAlreadyRegisteredHandler = async (req, res, param) => {
   let value;
   if (req.params[param])
@@ -502,5 +546,5 @@ const queryHandler = async (req, res, queryKeys, queryValues) => {
 module.exports = {
   handleUserResponse, handleCreateUserRequest, handleUpdateUserRequest, handleDeleteUserRequest,
   userFollowHandler, 
-  handleUserPostResponse, handleTimelineResponse, handlePostResponse, handlePostRepliesResponse
+  handleUserPostResponse, handleTimelineResponse, handlePostResponse, handlePostRepliesResponse, handlePostLikingUsersResponse
 };

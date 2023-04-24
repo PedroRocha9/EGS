@@ -284,7 +284,7 @@ router.get("/by/username/:username", async (req, res) => {
  *                      schema:
  *                        type: array
  *                        items:
- *                          $ref: '#/components/schemas/FollowUser'
+ *                          $ref: '#/components/schemas/TwitterUser'
  *          400:
  *              description: Bad request
  *              content:
@@ -330,7 +330,7 @@ router.get("/:uuid/followers", async (req, res) => {
  *                      schema:
  *                        type: array
  *                        items:
- *                          $ref: '#/components/schemas/FollowUser'
+ *                          $ref: '#/components/schemas/TwitterUser'
  *          400:
  *              description: Bad request
  *              content:

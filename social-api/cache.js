@@ -3,7 +3,8 @@ const Queue = require('bull');
 const redis  = require('redis');
 const { fetchFromTwitter } = require('./twitter');
 
-const rabbitmqUrl = 'amqp://localhost';
+// const rabbitmqUrl = 'amqp://localhost';
+const rabbitmqUrl = 'amqp://rabbitmq_service';
 const updateQueue = 'cache_update';
 const setQueue = 'cache_set';
 
@@ -128,8 +129,8 @@ const periodicUpdateCacheFromAPI = async (data) => {
 const publishMessage = async (message, queueName) => {
   try {
     // Connect to RabbitMQ
-    const connection = await amqp.connect(rabbitmqUrl);
-    const channel = await connection.createChannel();
+    connection = await amqp.connect(rabbitmqUrl);
+    channel = await connection.createChannel();
 
     // Declare queue
     await channel.assertQueue(queueName, { durable: true });
@@ -150,11 +151,11 @@ const publishMessage = async (message, queueName) => {
 
 // Consumer function
 const startConsumer = async () => {
-	try {
+  try {
     // Connect to RabbitMQ
     const connection = await amqp.connect(rabbitmqUrl);
     const channel = await connection.createChannel();
-
+    
 		// Queue for user triggered updates (cache hit)
 		await channel.assertQueue(updateQueue, { durable: true });
 		// Queue for user triggered updates (cache miss)
@@ -172,18 +173,19 @@ const startConsumer = async () => {
 	}
 };
 
-
 /* Start the redis client and broker consumer */
-const redisClient = redis.createClient();
-(async () => {
-  redisClient.on("error", (error) => console.error(`Ups : ${error}`));
-  await redisClient.connect();
-})();
+const redisClient = redis.createClient({ url: 'redis://redis:6379' });
+redisClient.on("error", (error) => console.error(`Ups : ${error}`));
 
-const periodicQueue = new Queue('periodicQueue', {
-  defaultJobOptions: {
-    timeout: 5000, // 5 seconds
-  }
+let periodicQueue;
+redisClient.connect().then(() => {
+  periodicQueue = new Queue('periodicQueue', {
+    defaultJobOptions: {
+      timeout: 5000, // 5 seconds
+    }
+  });
+}).catch((error) => {
+  console.error('Redis had an error connecting to the broker', error);
 });
 
 startConsumer();

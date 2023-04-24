@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { handleUserPostResponse, handleTimelineResponse, handlePostResponse, handlePostRepliesResponse } = require('../responses');
+const { handleUserPostResponse, handleTimelineResponse, handlePostResponse, handlePostRepliesResponse, handlePostLikingUsersResponse } = require('../responses');
 
 
 /**
@@ -166,9 +166,44 @@ router.get("/:id/replies", async (req, res) => {
     await handlePostRepliesResponse(req, res);
 });
 
+
 /**
  * @swagger
- * /v1/posts/:id/liking_users
+ * /v1/posts/{id}/liking_users:
+ *  get:
+ *      summary: Returns a list of users that have liked the Post specified by the requested UID.
+ *      tags: [Posts]
+ *      parameters:
+ *          - in: path
+ *            name: id
+ *            schema:
+ *              type: string
+ *            required: true
+ *            description: The ID of the post
+ *          - in: query
+ *            name: next_token
+ *            schema:
+ *              type: string
+ *            description: The fields can contain the next_token if to get the next "set" of users.
+ *      responses:
+ *          200:
+ *              description: List of FollowUser Object
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/TwitterUser'                            
+ *          400:
+ *              description: Bad request
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorInvalid'
+ *          404:
+ *              description: Replies not found
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get("/:id/liking_users", async (req, res) => {
     await handlePostLikingUsersResponse(req, res);

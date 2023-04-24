@@ -57,7 +57,7 @@ components:
               description: The Twitter handle (screen name) of this user.
               example: mrmaster__
 
-    FollowUser:
+    TwitterUser:
       type: object
       properties:
         data:

@@ -43,6 +43,11 @@ const fetchFromTwitter = async (key, id, query, next_token) => {
       const twitterTweetResult = await fetchTweetRepliesFromTwitter(id, next_token);
       twitterApiResponse = twitterTweetResult;
     }
+    
+    if (key == "liking_users") {
+      const twitterTweetResult = await fetchTweetLikingUsersFromTwitter(id, query, next_token);
+      twitterApiResponse = twitterTweetResult;
+    }
 
     return twitterApiResponse;
  } catch (error) {
@@ -209,6 +214,18 @@ const fetchTweetRepliesFromTwitter = async (id, next_token) => {
     if ('next_token' in replies.meta) tweets.next_token = replies.meta.next_token;
     
     return tweets;
+  } catch (error) {
+    console.log('Twitter API had an error while fetching info', error);
+  }
+}
+
+const fetchTweetLikingUsersFromTwitter = async (id, query, next_token) => {
+  try {
+    if (next_token !== undefined) query = { ...query, 'pagination_token': next_token };
+
+    const likingUsers = await readOnlyClient.v2.tweetLikedBy(id, query);
+
+    return { data: likingUsers.data, next_token: likingUsers.meta.next_token };
   } catch (error) {
     console.log('Twitter API had an error while fetching info', error);
   }

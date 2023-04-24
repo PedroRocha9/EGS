@@ -1,38 +1,56 @@
 version: '3.9'
 
 services:
-  redis:
-    image: "redis:latest"
-    container_name: redis_cache
-    ports:
-      - "6379:6379"
-
   rabbitmq:
     image: "rabbitmq:3-management"
     container_name: rabbitmq_service
     ports:
       - "5672:5672"
       - "15672:15672"
+    networks:
+      - backend
+  
+  redis:
+    image: "redis:latest"
+    container_name: redis_service
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
 
   mongodb:
     image: "mongo:latest"
     container_name: mongodb_service
     ports:
       - "27017:27017"
+    networks:
+      - backend
     volumes:
       - mongodb_data:/data/db
       - /var/lib/mongodb:/data/db
 
-  # app:
-  #   build:
-  #     context: .
-  #   container_name: app_service
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - redis
-  #     - rabbitmq
-  #     - mongodb
+  app:
+    build:
+      context: .
+    container_name: app_service
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+      - rabbitmq
+      - mongodb
+    environment:
+      PORT: 3000
+    networks:
+      - fronted
+      - backend
+    volumes:
+      - ./wait-for-rabbitmq.sh:/wait-for-rabbitmq.sh
+    command: [ "/wait-for-rabbitmq.sh", "rabbitmq_service", "npm", "run", "dev" ]
 
 volumes:
   mongodb_data:
+
+networks:
+  fronted:
+  backend:
