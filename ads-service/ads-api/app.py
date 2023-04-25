@@ -118,16 +118,16 @@ def get_ads():
                 if user[1] != "A":
                     return jsonify({'message': 'Consumers not authorized'}), 401
                 #validate data body
-                if 'pricing_model' not in data or 'age_range' not in data or 'ad_creative' not in data or 'description' not in data or 'location' not in data or 'target' not in data:
+                if 'pricing_model' not in data or 'age_range' not in data or 'ad_creative' not in data or 'description' not in data or 'location' not in data or 'target' not in data or 'redirect' not in data:
                     return jsonify({'message': 'Missing required data'}), 400
                 
                 #create new ad and add it to the user's ads
                 new_id = cur.execute("SELECT MAX(id) FROM ads").fetchone()[0] + 1
 
                 print(str(new_id) + " on user " + str(user[0]))
-                cur.execute("insert into ads (type, description, pricing_model, age_range, location, ad_creative, impressions, clicks, user, target, active) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                cur.execute("insert into ads (type, description, pricing_model, age_range, location, ad_creative, impressions, clicks, user, target, active, destination) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                             , ("image", data['description'], data['pricing_model'], data['age_range'], data['location'], 
-                               data['ad_creative'], 0, 0, user[0], data['target'], 1))
+                               data['ad_creative'], 0, 0, user[0], data['target'], 1, data['redirect']))
                 conn.commit()
                 return jsonify({'id': new_id}), 201
         
@@ -383,5 +383,5 @@ def get_user_analytics(adv_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
 

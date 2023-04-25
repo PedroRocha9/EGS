@@ -11,12 +11,13 @@ import Iconify from '../../components/iconify';
 export default function AdForm() {
     const navigate = useNavigate();
 
-    const [model, setModel] = useState('');
+    const [model, setModel] = useState("CPC");
     const [age, setAge] = useState('');
     const [location, setLocation] = useState('');
     const [description, setDescription] = useState('');
     const [url, setUrl] = useState('');
     const [target, setTarget] = useState('');
+    const [redirect, setRedirect] = useState('');
 
     const handleClick = () => {
         fetch('http://localhost:5000/v1/ads', {
@@ -32,6 +33,7 @@ export default function AdForm() {
                 description: description,
                 ad_creative: url,
                 target: target,
+                redirect: redirect,
             }),
         })
         .then((response) => {
@@ -116,9 +118,9 @@ export default function AdForm() {
                 </Select>
             </FormControl>
             <TextField name="link" label={model == 'CPC' ? 'Total clicks goal' : 'Total impressions goal'} onChange={(e) => setTarget(e.target.value)}/>
-            <TextField name="link" label="Advertisement url" onChange={(e) => setUrl(e.target.value)}/>
-            
+            <TextField name="link" label="Advertisement link" onChange={(e) => setUrl(e.target.value)}/>
         </Stack>
+        {model == "CPC" ?? <TextField name="link" label="Redirect destination" onChange={(e) => setRedirect(e.target.value)}/>}
 
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ my: 2 }}>
         </Stack>
