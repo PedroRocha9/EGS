@@ -57,7 +57,7 @@ components:
               description: The Twitter handle (screen name) of this user.
               example: mrmaster__
 
-    FollowUser:
+    TwitterUser:
       type: object
       properties:
         data:
@@ -102,17 +102,122 @@ components:
                 type: string
                 description: The text content of tweet itself.
                 example: Este é o meu primeiro tweet
+              conversation_id:
+                type: string
+                description: The ID of the conversation this tweet is part of.
+                example: 1598729618432806913
+              created_at:
+                type: string
+                description: Creation timestamp of this tweet.
+                example: 2021-08-27T15:00:00.000Z
+              public_metrics:
+                type: object
+                properties:
+                  retweet_count:
+                    type: number
+                    description: Number of times this Tweet has been retweeted.
+                    example: 0
+                  reply_count:
+                    type: number
+                    description: Number of times this Tweet has been replied to.
+                    example: 0
+                  like_count:
+                    type: number
+                    description: Number of times this Tweet has been liked.
+                    example: 0
+                  quote_count:
+                    type: number
+                    description: Number of times this Tweet has been quoted.
+                    example: 0
+              author_info:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: The friendly name of this user, as shown on their profile.
+                    example: André Clérigo
+                  username:
+                    type: string
+                    description: The Twitter handle (screen name) of this user.
+                    example: mrmaster__
+                  profile_image_url:
+                    type: string
+                    description: The Twitter's image profile url
+                    example: https://pbs.twimg.com/profile_images/1586701254474043394/lM2FGOL6_normal.jpg
               photo_urls:
                 type: array
                 description: The photo urls of the tweet.
                 items:
                   type: string
                   example: https://pbs.twimg.com/media/EtZ2Z7tXMAA5Z5_.jpg
-        next_token:
-          type: string
-          description: Pagination token for the next page of results.
-          example: 7140dibdnow9c7btw424cf1fkc6jlfl3cyqfld29ydkxf
+              referenced_tweet:
+                $ref: '#/components/schemas/OriginalPost'
 
+    OriginalPost:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier of the tweet. This is returned as a string in order to avoid complications with languages and tools that cannot handle large integers.
+                example: 1598729618432806913
+              text:
+                type: string
+                description: The text content of tweet itself.
+                example: Este é o meu primeiro tweet
+              conversation_id:
+                type: string
+                description: The ID of the conversation this tweet is part of.
+                example: 1598729618432806913
+              created_at:
+                type: string
+                description: Creation timestamp of this tweet.
+                example: 2021-08-27T15:00:00.000Z
+              public_metrics:
+                type: object
+                properties:
+                  retweet_count:
+                    type: number
+                    description: Number of times this Tweet has been retweeted.
+                    example: 0
+                  reply_count:
+                    type: number
+                    description: Number of times this Tweet has been replied to.
+                    example: 0
+                  like_count:
+                    type: number
+                    description: Number of times this Tweet has been liked.
+                    example: 0
+                  quote_count:
+                    type: number
+                    description: Number of times this Tweet has been quoted.
+                    example: 0
+              author_info:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: The friendly name of this user, as shown on their profile.
+                    example: André Clérigo
+                  username:
+                    type: string
+                    description: The Twitter handle (screen name) of this user.
+                    example: mrmaster__
+                  profile_image_url:
+                    type: string
+                    description: The Twitter's image profile url
+                    example: https://pbs.twimg.com/profile_images/1586701254474043394/lM2FGOL6_normal.jpg
+              photo_urls:
+                type: array
+                description: The photo urls of the tweet.
+                items:
+                  type: string
+                  example: https://pbs.twimg.com/media/EtZ2Z7tXMAA5Z5_.jpg
+                  
     ErrorInvalid:
       type: object
       properties:
@@ -153,10 +258,10 @@ components:
               properties:
                 value:
                   type: array
-                  description: The name of the parameter that is invalid.
+                  description: The name of the parameter that is not found.
                   items:
                     type: string
-                    decription: The value of the parameter that is invalid.
+                    decription: The value of the parameter that is not found.
                     example: "12345678912345678"
         title:
           type: string

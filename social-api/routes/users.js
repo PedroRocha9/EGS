@@ -1,7 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const { handleUserResponse, handleCreateUserRequest, handleUpdateUserRequest, handleDeleteUserRequest, userFollowHandler } = require('../responses');
+const logger = require('../logger');
 
+
+// Middleware to log request info
+router.use((req, res, next) => {
+  logger.info({ message: `[ENDPOINT] ${req.method} ${req.path}`, ip:req.ip, params: req.params, query: req.query });
+
+  next();
+});
+
+// Middleware to log response time
+router.use((req, res, next) => {
+  const startHrTime = process.hrtime();
+
+  res.on('finish', () => { // 'finish' event is emitted when response finished sending
+      const elapsedHrTime = process.hrtime(startHrTime);
+      const elapsedTimeInMs = elapsedHrTime[0] * 1000 + elapsedHrTime[1] / 1e6;
+
+      logger.info({ message: `[RESPONSE] ${req.method} ${req.path}`, status_code: res.statusCode, time_elapsed: elapsedTimeInMs.toFixed(3) + ` ms` });
+  });
+
+  next();
+});
 
 /**
  * @swagger
@@ -284,7 +306,7 @@ router.get("/by/username/:username", async (req, res) => {
  *                      schema:
  *                        type: array
  *                        items:
- *                          $ref: '#/components/schemas/FollowUser'
+ *                          $ref: '#/components/schemas/TwitterUser'
  *          400:
  *              description: Bad request
  *              content:
@@ -330,7 +352,7 @@ router.get("/:uuid/followers", async (req, res) => {
  *                      schema:
  *                        type: array
  *                        items:
- *                          $ref: '#/components/schemas/FollowUser'
+ *                          $ref: '#/components/schemas/TwitterUser'
  *          400:
  *              description: Bad request
  *              content:

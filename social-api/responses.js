@@ -1,6 +1,7 @@
 const { fetchFromDatabase, addToDatabase, updateDatabase, deleteFromDatabase } = require("./database");
 const { fetchFromCache } = require("./cache");
 const { startWorker } = require("./worker");
+const logger = require('./logger');
 require('dotenv').config();
 
 startWorker();
@@ -49,6 +50,7 @@ const handleUserResponse = async (req, res) => {
 
     return res.status(200).json({ data: data });
   } catch (error) {
+    console.log('aqui');
     console.log(error);   // Debugging purposes
     return res.status(500).json({ errors: "Internal server error" });
   }
@@ -254,6 +256,126 @@ const handleDeleteUserRequest = async (req, res) => {
   }
 };
 
+// Get the user's timeline endpoint handler
+const handleTimelineResponse = async (req, res) => {
+  const requiredFields = ['uuid', 'username', 'name', 'external_information'];
+  const param = Object.keys(req.params)[0];
+  let next_token = req.query;
+
+  try {
+    const invalidUserHandlerResult = await invalidUserHandler(req, res, param);
+    if (invalidUserHandlerResult === 'response_sent') return;
+
+    let data = await fetchFromDatabase("users", param, req.params[param], requiredFields);
+    if (!data) {
+      userNotFoundHandler(req, res, param);
+      return;
+    }
+
+    const queryHandlerResult = await queryHandler(req, res, ["next_token"], {"next_token": [req.query[Object.keys(req.query)]]});
+    if (queryHandlerResult === 'response_sent') return;
+
+    if (Object.keys(req.query).length === 0)
+      next_token = undefined;
+    else
+      next_token = next_token.next_token;
+
+    const tweets = await fetchFromCache('timeline', data.external_information.id, null, next_token);
+
+    return res.status(200).json(JSON.parse(tweets));
+  } catch (error) {
+    console.log(error);   // Debugging purposes
+    return res.status(500).json({ errors: "Internal server error" });
+  }
+};
+
+// Get the tweet endpoint handler
+const handlePostResponse = async (req, res) => {
+  const param = Object.keys(req.params)[0];
+
+  try {
+    const queryHandlerResult = await queryHandler(req, res, [], {});
+    if (queryHandlerResult === 'response_sent') return;
+
+    const invalidTweetResult = await invalidTweetIdHandler(req, res, param);
+    if (invalidTweetResult === 'response_sent') return;
+
+    const tweet = await fetchFromCache('tweet', req.params[param], null, undefined);
+
+    if (tweet === 'null' || tweet === null) {
+      tweetNotFoundHandler(req, res, param);
+      return;
+    }
+
+    return res.status(200).json(JSON.parse(tweet));
+  } catch (error) {
+    console.log(error);   // Debugging purposes
+    return res.status(500).json({ errors: "Internal server error" });
+  }
+};
+
+// Get the tweet endpoint handler
+const handlePostRepliesResponse = async (req, res) => {
+  const param = Object.keys(req.params)[0];
+  let next_token = req.query;
+
+  try {
+    const queryHandlerResult = await queryHandler(req, res, ["next_token"], {"next_token": [req.query[Object.keys(req.query)]]});
+    if (queryHandlerResult === 'response_sent') return;
+
+    const invalidTweetResult = await invalidTweetIdHandler(req, res, param);
+    if (invalidTweetResult === 'response_sent') return;
+
+    if (Object.keys(req.query).length === 0)
+      next_token = undefined;
+    else
+      next_token = next_token.next_token;
+
+    const tweets = await fetchFromCache('replies', req.params[param], null, next_token);
+
+    if ((JSON.parse(tweets).data).length === 0) {
+      noRepliesFoundHandler(req, res, param);
+      return;
+    }
+
+    return res.status(200).json(JSON.parse(tweets));
+  } catch (error) {
+    console.log(error);   // Debugging purposes
+    return res.status(500).json({ errors: "Internal server error" });
+  }
+};
+
+// Get the users that liked the tweet endpoint handler
+const handlePostLikingUsersResponse = async (req, res) => {
+  const param = Object.keys(req.params)[0];
+  let next_token = req.query;
+
+  try {
+    const queryHandlerResult = await queryHandler(req, res, ["next_token"], {"next_token": [req.query[Object.keys(req.query)]]});
+    if (queryHandlerResult === 'response_sent') return;
+
+    const invalidTweetResult = await invalidTweetIdHandler(req, res, param);
+    if (invalidTweetResult === 'response_sent') return;
+
+    if (Object.keys(req.query).length === 0)
+      next_token = undefined;
+    else
+      next_token = next_token.next_token;
+
+    const tweets = await fetchFromCache('liking_users', req.params[param], {'user.fields':  'profile_image_url'}, next_token);
+
+    if ((JSON.parse(tweets).data).length === 0) {
+      noLikingUsersFoundHandler(req, res, param);
+      return;
+    }
+
+    return res.status(200).json(JSON.parse(tweets));
+  } catch (error) {
+    console.log(error);   // Debugging purposes
+    return res.status(500).json({ errors: "Internal server error" });
+  }
+};
+
 // Auxiliary handler for invalid id/username
 const invalidUserHandler = async (req, res, param) => {
   try {
@@ -261,11 +383,11 @@ const invalidUserHandler = async (req, res, param) => {
     if (param === "username" && !req.params[param].match(/^[A-Za-z0-9_]{1,15}$/)) throw new Error("Invalid username");
 
     // if param is uuid and the value contains letters, return error
-    if (param === "uuid" && req.params[param].match(/[a-zA-Z]/)) throw new Error("Invalid uuid");
+    if (param === "uuid" && !req.params[param].match(/^[0-9]+$/)) throw new Error("Invalid uuid");
 
     return;
   } catch (error) {
-    console.log(error.message);   // Debugging purposes
+    console.error(error.message);   // Debugging purposes
     res.status(400).json({
       errors: [{
         parameters: {
@@ -277,6 +399,7 @@ const invalidUserHandler = async (req, res, param) => {
       detail: "One or more parameters to your request was invalid.",
     });
 
+    logger.error({ message: `[HANDLER] Invalid user with ${param}: [${req.params[param]}`, ip:req.ip, params: req.params, query: req.query});
     return 'response_sent';
   }
 };
@@ -293,6 +416,76 @@ const userNotFoundHandler = async (req, res, param) => {
     parameter: param,
     resource_type: "user"
   });
+  logger.error({ message: `[HANDLER] User not found with ${param}: [${req.params[param]}]`, ip:req.ip, params: req.params, query: req.query});
+};
+
+const invalidTweetIdHandler = async (req, res, param) => {
+  try {
+    // if the twitter id doesnt contain only numbers, return error
+    if (!req.params[param].match(/^[0-9]+$/)) throw new Error("Invalid tweet id");
+
+    return;
+  } catch (error) {
+    console.error(error.message);   // Debugging purposes
+    res.status(400).json({
+      errors: [{
+        parameters: {
+          [param]: [req.params[param]]
+        },
+        message: "The `" + param + "` query parameter value [" + req.params[param] +"] is not valid"
+      }],
+      title: "Invalid Request",
+      detail: "One or more parameters to your request was invalid.",
+    });
+    logger.error({ message: `[HANDLER] Invalid tweet with ${param}: [${req.params[param]}]`, ip:req.ip, params: req.params, query: req.query});
+
+    return 'response_sent';
+  }
+};  
+
+const tweetNotFoundHandler = async (req, res, param) => {
+  res.status(404).json({
+    errors: [{
+      parameters: {
+        value: [req.params[param]]
+      }
+    }],
+    detail: "Could not find tweet with id: [" + req.params[param] + "].",
+    title: "Not Found Error",
+    parameter: param,
+    resource_type: "tweet"
+  });
+  logger.error({ message: `[HANDLER] Tweet not found with ${param}: [${req.params[param]}]`, ip:req.ip, params: req.params, query: req.query});
+};
+
+const noRepliesFoundHandler = async (req, res, param) => {
+  res.status(404).json({
+    errors: [{
+      parameters: {
+        value: [req.params[param]]
+      }
+    }],
+    detail: "Could not find replies for the conversation_id: [" + req.params[param] + "].",
+    title: "Not Found Error",
+    parameter: param,
+    resource_type: "replies"
+  });
+  logger.error({ message: `[HANDLER] No replies found for conversation_id: [${req.params[param]}]`, ip:req.ip, params: req.params, query: req.query});
+};
+
+const noLikingUsersFoundHandler = async (req, res, param) => {
+  res.status(404).json({
+    errors: [{
+      parameters: {
+        value: [req.params[param]]
+      }
+    }],
+    detail: "Could not find users that liked the tweet: [" + req.params[param] + "].",
+    title: "Not Found Error",
+    parameter: param,
+    resource_type: "liking_users"
+  });
+  logger.error({ message: `[HANDLER] No liking users found for tweet: [${req.params[param]}]`, ip:req.ip, params: req.params, query: req.query});
 };
 
 const userAlreadyRegisteredHandler = async (req, res, param) => {
@@ -313,6 +506,7 @@ const userAlreadyRegisteredHandler = async (req, res, param) => {
     parameter: param,
     resource_type: "user"
   });
+  logger.error({ message: `[HANDLER] User already registered with ${param}: [${value}]`, ip:req.ip, params: req.params, query: req.query});
 };
 
 const queryHandler = async (req, res, queryKeys, queryValues) => {
@@ -351,6 +545,7 @@ const queryHandler = async (req, res, queryKeys, queryValues) => {
       title: "Invalid Request",
       detail: "One or more parameters to your request was invalid.",
     });
+    logger.error({ message: `[HANDLER] Invalid query parameters`, ip:req.ip, params: req.params, query: req.query});
 
     return 'response_sent';
   }
@@ -361,5 +556,5 @@ const queryHandler = async (req, res, queryKeys, queryValues) => {
 module.exports = {
   handleUserResponse, handleCreateUserRequest, handleUpdateUserRequest, handleDeleteUserRequest,
   userFollowHandler, 
-  handleUserPostResponse
+  handleUserPostResponse, handleTimelineResponse, handlePostResponse, handlePostRepliesResponse, handlePostLikingUsersResponse
 };
