@@ -13,4 +13,3 @@ done
 
 >&2 echo "RabbitMQ is up - executing command"
 exec $cmd
-

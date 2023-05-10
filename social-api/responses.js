@@ -1,6 +1,7 @@
 const { fetchFromDatabase, addToDatabase, updateDatabase, deleteFromDatabase } = require("./database");
 const { fetchFromCache } = require("./cache");
 const { startWorker } = require("./worker");
+const logger = require('./logger');
 require('dotenv').config();
 
 startWorker();
@@ -49,6 +50,7 @@ const handleUserResponse = async (req, res) => {
 
     return res.status(200).json({ data: data });
   } catch (error) {
+    console.log('aqui');
     console.log(error);   // Debugging purposes
     return res.status(500).json({ errors: "Internal server error" });
   }
@@ -385,7 +387,7 @@ const invalidUserHandler = async (req, res, param) => {
 
     return;
   } catch (error) {
-    console.log(error.message);   // Debugging purposes
+    console.error(error.message);   // Debugging purposes
     res.status(400).json({
       errors: [{
         parameters: {
@@ -397,6 +399,7 @@ const invalidUserHandler = async (req, res, param) => {
       detail: "One or more parameters to your request was invalid.",
     });
 
+    logger.error({ message: `[HANDLER] Invalid user with ${param}: [${req.params[param]}`, ip:req.ip, params: req.params, query: req.query});
     return 'response_sent';
   }
 };
@@ -413,6 +416,7 @@ const userNotFoundHandler = async (req, res, param) => {
     parameter: param,
     resource_type: "user"
   });
+  logger.error({ message: `[HANDLER] User not found with ${param}: [${req.params[param]}]`, ip:req.ip, params: req.params, query: req.query});
 };
 
 const invalidTweetIdHandler = async (req, res, param) => {
@@ -422,7 +426,7 @@ const invalidTweetIdHandler = async (req, res, param) => {
 
     return;
   } catch (error) {
-    console.log(error.message);   // Debugging purposes
+    console.error(error.message);   // Debugging purposes
     res.status(400).json({
       errors: [{
         parameters: {
@@ -433,6 +437,7 @@ const invalidTweetIdHandler = async (req, res, param) => {
       title: "Invalid Request",
       detail: "One or more parameters to your request was invalid.",
     });
+    logger.error({ message: `[HANDLER] Invalid tweet with ${param}: [${req.params[param]}]`, ip:req.ip, params: req.params, query: req.query});
 
     return 'response_sent';
   }
@@ -450,6 +455,7 @@ const tweetNotFoundHandler = async (req, res, param) => {
     parameter: param,
     resource_type: "tweet"
   });
+  logger.error({ message: `[HANDLER] Tweet not found with ${param}: [${req.params[param]}]`, ip:req.ip, params: req.params, query: req.query});
 };
 
 const noRepliesFoundHandler = async (req, res, param) => {
@@ -464,6 +470,7 @@ const noRepliesFoundHandler = async (req, res, param) => {
     parameter: param,
     resource_type: "replies"
   });
+  logger.error({ message: `[HANDLER] No replies found for conversation_id: [${req.params[param]}]`, ip:req.ip, params: req.params, query: req.query});
 };
 
 const noLikingUsersFoundHandler = async (req, res, param) => {
@@ -478,6 +485,7 @@ const noLikingUsersFoundHandler = async (req, res, param) => {
     parameter: param,
     resource_type: "liking_users"
   });
+  logger.error({ message: `[HANDLER] No liking users found for tweet: [${req.params[param]}]`, ip:req.ip, params: req.params, query: req.query});
 };
 
 const userAlreadyRegisteredHandler = async (req, res, param) => {
@@ -498,6 +506,7 @@ const userAlreadyRegisteredHandler = async (req, res, param) => {
     parameter: param,
     resource_type: "user"
   });
+  logger.error({ message: `[HANDLER] User already registered with ${param}: [${value}]`, ip:req.ip, params: req.params, query: req.query});
 };
 
 const queryHandler = async (req, res, queryKeys, queryValues) => {
@@ -536,6 +545,7 @@ const queryHandler = async (req, res, queryKeys, queryValues) => {
       title: "Invalid Request",
       detail: "One or more parameters to your request was invalid.",
     });
+    logger.error({ message: `[HANDLER] Invalid query parameters`, ip:req.ip, params: req.params, query: req.query});
 
     return 'response_sent';
   }

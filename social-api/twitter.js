@@ -1,4 +1,5 @@
 const { TwitterApi } = require("twitter-api-v2");
+const logger = require("./logger");
 
 const fetchFromTwitter = async (key, id, query, next_token) => {
   let twitterApiResponse;
@@ -51,6 +52,7 @@ const fetchFromTwitter = async (key, id, query, next_token) => {
 
     return twitterApiResponse;
  } catch (error) {
+    logger.error({ message: `[TWITTER] There was an error with the returned response from the API`, error });
     console.log('Twitter API had an error with the returned response', error);
   }
 };
@@ -58,8 +60,10 @@ const fetchFromTwitter = async (key, id, query, next_token) => {
 const fetchUserFromTwitter = async (id, query) => {
   try {
     const userInfo = await readOnlyClient.v2.users(id, query, {});
+    logger.info(`[TWITTER] Fetched User Data from API for user with id: ${id}`);
     return userInfo.data[0];
   } catch (error) {
+    logger.error({ message: `[TWITTER] Failed to fetch User Data from API for user with id: ${id}`, error });
     console.log('Twitter API had an error while fetching info', error);
   }
 };
@@ -69,21 +73,24 @@ const fetchFollowersFromTwitter = async (id, query, next_token) => {
     if (next_token !== undefined) query = { ...query, 'pagination_token': next_token };
     
     const followerInfo = await readOnlyClient.v2.followers(id, query);
-
+    logger.info(`[TWITTER] Fetched Followers Data from API for user with id: ${id}`);
     return { data: followerInfo.data, next_token: followerInfo.meta.next_token };
   } catch (error) {
-    console.log('Twitter API had an error while fetching info', error);
+    logger.error({ message: `[TWITTER] Failed to fetch Followers Data from API for user with id: ${id}`, error });
+    console.log('Twitter API had an error while fetching followers', error);
   }
 };
 
 const fetchFollowingFromTwitter = async (id, query, next_token) => {
   try {
     if (next_token !== undefined) query = { ...query, 'pagination_token': next_token };
-
     const followerInfo = await readOnlyClient.v2.followers(id, query);
+
+    logger.info(`[TWITTER] Fetched Following Data from API for user with id: ${id}`);
     return { data: followerInfo.data, next_token: followerInfo.meta.next_token };
   } catch (error) {
-    console.log('Twitter API had an error while fetching info', error);
+    logger.error({ message: `[TWITTER] Failed to fetch Following Data from API for user with id: ${id}`, error });
+    console.log('Twitter API had an error while fetching following', error);
   }
 };
 
@@ -114,9 +121,11 @@ const fetchUserTweetsFromTwitter = async (id, next_token) => {
     let tweets = { data: userTweets.data.data};
     if ('next_token' in userTweets.meta) tweets.next_token = userTweets.meta.next_token;
     
+    logger.info(`[TWITTER] Fetched User Tweets Data from API for user with id: ${id}`);
     return tweets;
   } catch (error) {
-    console.log('Twitter API had an error while fetching info', error);
+    logger.error({ message: `[TWITTER] Failed to fetch User Tweets Data from API for user with id: ${id}`, error });
+    console.error('Twitter API had an error while fetching user tweets', error);
   }
 };
 
@@ -145,9 +154,11 @@ const fetchTimelineFromTwitter = async (id, next_token) => {
     let tweets = { data: homeTimeline.data.data};
     if ('next_token' in homeTimeline.meta) tweets.next_token = homeTimeline.meta.next_token;
     
+    logger.info(`[TWITTER] Fetched Timeline Data from API`);
     return tweets;
   } catch (error) {
-    console.log('Twitter API had an error while fetching info', error);
+    logger.error({ message: `[TWITTER] Failed to fetch Timeline Data from API`, error });
+    console.log('Twitter API had an error while fetching timeline', error);
   }
 }
 
@@ -159,12 +170,13 @@ const fetchTweetFromTwtitter = async (id) => {
       'user.fields': ['profile_image_url', 'username'],
       'tweet.fields': ['public_metrics', 'created_at', 'conversation_id']
     });
-
     tweet = parseTweetsData(tweet.data, tweet, false);
-
+    
+    logger.info(`[TWITTER] Fetched Tweet Data from API for tweet with id: ${id}`);
     return tweet
   } catch (error) {
-    console.log('Twitter API had an error while fetching info', error);
+    logger.error({ message: `[TWITTER] Failed to fetch Tweet Data from API for tweet with id: ${id}`, error });
+    console.log('Twitter API had an error while fetching tweet', error);
   }
 }
 
@@ -176,12 +188,13 @@ const fetchOriginalTweetFromTwtitter = async (id) => {
       'user.fields': ['profile_image_url', 'username'],
       'tweet.fields': ['public_metrics', 'created_at', 'conversation_id']
     });
-
     tweet = parseTweetsData(tweet.data, tweet, true);
 
+    logger.info(`[TWITTER] Fetched Original Tweet Data from API for tweet with id: ${id}`);
     return tweet
   } catch (error) {
-    console.log('Twitter API had an error while fetching info', error);
+    logger.error({ message: `[TWITTER] Failed to fetch Original Tweet Data from API for tweet with id: ${id}`, error });
+    console.log('Twitter API had an error while fetching original tweet', error);
   }
 }
 
@@ -213,8 +226,10 @@ const fetchTweetRepliesFromTwitter = async (id, next_token) => {
     let tweets = { data: replies.data.data};
     if ('next_token' in replies.meta) tweets.next_token = replies.meta.next_token;
     
+    logger.info(`[TWITTER] Fetched Replies from API for tweet with id: ${id}`);
     return tweets;
   } catch (error) {
+    logger.error({ message: `[TWITTER] Failed to fetch Replies from API for tweet with id: ${id}`, error });
     console.log('Twitter API had an error while fetching info', error);
   }
 }
@@ -222,11 +237,12 @@ const fetchTweetRepliesFromTwitter = async (id, next_token) => {
 const fetchTweetLikingUsersFromTwitter = async (id, query, next_token) => {
   try {
     if (next_token !== undefined) query = { ...query, 'pagination_token': next_token };
-
     const likingUsers = await readOnlyClient.v2.tweetLikedBy(id, query);
 
+    logger.info(`[TWITTER] Fetched users that liked a tweet from API for tweet with id: ${id}`);
     return { data: likingUsers.data, next_token: likingUsers.meta.next_token };
   } catch (error) {
+    logger.error({ message: `[TWITTER] Failed to fetch users that liked a tweet from API for tweet with id: ${id}`, error });
     console.log('Twitter API had an error while fetching info', error);
   }
 }
@@ -294,6 +310,5 @@ const userClient =  new TwitterApi({
   accessToken: process.env.TWITTER_ACCESS_TOKEN,
   accessSecret: process.env.TWITTER_TOKEN_SECRET,
 });
-
 
 module.exports = { fetchFromTwitter };

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { handleUserPostResponse, handleTimelineResponse, handlePostResponse, handlePostRepliesResponse, handlePostLikingUsersResponse } = require('../responses');
+const logger = require('../logger');
 
 
 /**
@@ -42,6 +43,7 @@ const { handleUserPostResponse, handleTimelineResponse, handlePostResponse, hand
  *                          $ref: '#/components/schemas/ErrorNotFound'       
  */
 router.get("/users/:uuid", async (req, res) => {
+    logger.info({ message: `[ENDPOINT] GET /posts/users/${req.params.uuid}`, ip:req.ip, params: req.params, query: req.query });
     await handleUserPostResponse(req, res);
 });
 
@@ -84,6 +86,7 @@ router.get("/users/:uuid", async (req, res) => {
  *                          $ref: '#/components/schemas/ErrorNotFound'       
  */
 router.get("/:uuid/timeline", async (req, res) => {
+    logger.info({ message: `[ENDPOINT] GET /posts/${req.params.uuid}/timeline`, ip:req.ip, params: req.params, query: req.query });
     await handleTimelineResponse(req, res);
 });
 
@@ -121,6 +124,7 @@ router.get("/:uuid/timeline", async (req, res) => {
  *                          $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get("/:id", async (req, res) => {
+    logger.info({ message: `[ENDPOINT] GET /posts/${req.params.id}`, ip:req.ip, params: req.params, query: req.query });
     await handlePostResponse(req, res);
 });
 
@@ -163,6 +167,7 @@ router.get("/:id", async (req, res) => {
  *                          $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get("/:id/replies", async (req, res) => {
+    logger.info({ message: `[ENDPOINT] GET /posts/${req.params.id}/replies`, ip:req.ip, params: req.params, query: req.query });
     await handlePostRepliesResponse(req, res);
 });
 
@@ -206,8 +211,8 @@ router.get("/:id/replies", async (req, res) => {
  *                          $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get("/:id/liking_users", async (req, res) => {
+    logger.info({ message: `[ENDPOINT] GET /posts/${req.params.id}/liking_users`, ip:req.ip, params: req.params, query: req.query });
     await handlePostLikingUsersResponse(req, res);
 });
-
 
 module.exports = router;

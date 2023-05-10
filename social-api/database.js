@@ -1,5 +1,6 @@
 const { MongoClient } = require("mongodb");
 const { deleteFromCache } = require("./cache");
+const logger = require('./logger');
 
 const fetchFromDatabase = async (collectionName, param, paramValue, dbQuery) => {
   const mongoClient = new MongoClient("mongodb://mongodb_service:27017");
@@ -16,13 +17,14 @@ const fetchFromDatabase = async (collectionName, param, paramValue, dbQuery) => 
         Object.entries(data).filter(([key, value]) => dbQuery.includes(key))
       );
     }
-
+    logger.info(`[DATABASE] Fetched data from ${collectionName} collection with ${param}: ${paramValue}`);
     return data;
   } catch (error) {
+    logger.error({ message: `[DATABASE] Failed to fetch data from ${collectionName} collection: ${error.message}`, error });
     console.error(error);     // Debugging purposes
     throw new Error("Failed to fetch data from database");
   } finally {
-    await mongoClient.close();    
+    await mongoClient.close();
   }
 };
   
@@ -34,7 +36,9 @@ const addToDatabase = async (collectionName, data) => {
     const database = mongoClient.db("mixit");
     const collection = database.collection(collectionName);
     await collection.insertOne(data);
+    logger.info(`[DATABASE] Added data to ${collectionName} collection`);
   } catch (error) {
+    logger.error({ message: `[DATABASE] Failed to add data to ${collectionName} collection: ${error.message}`,error });
     console.error(error);     // Debugging purposes
     throw new Error("Failed to post data from database");
   } finally {
@@ -52,8 +56,10 @@ const updateDatabase = async (collectionName, param, paramValue, newValues) => {
     let data = await collection.updateOne({ [param]: paramValue }, { $set: newValues});
     data = await collection.findOne({ [param]: paramValue });
 
+    logger.info(`[DATABASE] Updated data in ${collectionName} collection with ${param}: ${paramValue}`);
     return data;
   } catch (error) {
+    logger.error({ message: `[DATABASE] Failed to update data in ${collectionName} collection: ${error.message}`, error });
     console.error(error);     // Debugging purposes
     throw new Error("Failed to update data from database");
   } finally {
@@ -77,8 +83,10 @@ const deleteFromDatabase = async (collectionName, param, paramValue) => {
       if (!user) await deleteFromCache(data.external_information.id);
     }
 
+    logger.warning(`[DATABASE] Deleted data from ${collectionName} collection with ${param}: ${paramValue}`);
     return data;
   } catch (error) {
+    logger.error({ message: `[DATABASE] Failed to delete data from ${collectionName} collection: ${error.message}`, error });
     console.error(error);     // Debugging purposes
     throw new Error("Failed to delete data from database");
   } finally {
