@@ -92,7 +92,6 @@ services:
       - "graylog_journal:/usr/share/graylog/data/journal"
     networks:
       - backend
-      - api
 
   app:
     build:

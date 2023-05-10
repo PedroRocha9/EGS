@@ -4,6 +4,27 @@ const { handleUserPostResponse, handleTimelineResponse, handlePostResponse, hand
 const logger = require('../logger');
 
 
+// Middleware to log request info
+router.use((req, res, next) => {
+  logger.info({ message: `[ENDPOINT] ${req.method} ${req.path}`, ip:req.ip, params: req.params, query: req.query });
+
+  next();
+});
+
+// Middleware to log response time
+router.use((req, res, next) => {
+  const startHrTime = process.hrtime();
+
+  res.on('finish', () => { // 'finish' event is emitted when response finished sending
+    const elapsedHrTime = process.hrtime(startHrTime);
+    const elapsedTimeInMs = elapsedHrTime[0] * 1000 + elapsedHrTime[1] / 1e6;
+
+    logger.info({ message: `[RESPONSE] ${req.method} ${req.path}`, status_code: res.statusCode, time_elapsed: elapsedTimeInMs.toFixed(3) + ` ms` });
+  });
+
+  next();
+});
+
 /**
  * @swagger
  * /v1/posts/users/{uuid}:
@@ -43,8 +64,7 @@ const logger = require('../logger');
  *                          $ref: '#/components/schemas/ErrorNotFound'       
  */
 router.get("/users/:uuid", async (req, res) => {
-    logger.info({ message: `[ENDPOINT] GET /posts/users/${req.params.uuid}`, ip:req.ip, params: req.params, query: req.query });
-    await handleUserPostResponse(req, res);
+  await handleUserPostResponse(req, res);
 });
 
 /**
@@ -86,8 +106,7 @@ router.get("/users/:uuid", async (req, res) => {
  *                          $ref: '#/components/schemas/ErrorNotFound'       
  */
 router.get("/:uuid/timeline", async (req, res) => {
-    logger.info({ message: `[ENDPOINT] GET /posts/${req.params.uuid}/timeline`, ip:req.ip, params: req.params, query: req.query });
-    await handleTimelineResponse(req, res);
+  await handleTimelineResponse(req, res);
 });
 
 /**
@@ -124,8 +143,7 @@ router.get("/:uuid/timeline", async (req, res) => {
  *                          $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get("/:id", async (req, res) => {
-    logger.info({ message: `[ENDPOINT] GET /posts/${req.params.id}`, ip:req.ip, params: req.params, query: req.query });
-    await handlePostResponse(req, res);
+  await handlePostResponse(req, res);
 });
 
 /**
@@ -167,8 +185,7 @@ router.get("/:id", async (req, res) => {
  *                          $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get("/:id/replies", async (req, res) => {
-    logger.info({ message: `[ENDPOINT] GET /posts/${req.params.id}/replies`, ip:req.ip, params: req.params, query: req.query });
-    await handlePostRepliesResponse(req, res);
+  await handlePostRepliesResponse(req, res);
 });
 
 
@@ -211,8 +228,7 @@ router.get("/:id/replies", async (req, res) => {
  *                          $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get("/:id/liking_users", async (req, res) => {
-    logger.info({ message: `[ENDPOINT] GET /posts/${req.params.id}/liking_users`, ip:req.ip, params: req.params, query: req.query });
-    await handlePostLikingUsersResponse(req, res);
+  await handlePostLikingUsersResponse(req, res);
 });
 
 module.exports = router;

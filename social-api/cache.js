@@ -4,7 +4,6 @@ const redis  = require('redis');
 const { fetchFromTwitter } = require('./twitter');
 const logger = require('./logger');
 
-// const rabbitmqUrl = 'amqp://localhost';
 const rabbitmqUrl = 'amqp://rabbitmq_service';
 const updateQueue = 'cache_update';
 const setQueue = 'cache_set';
@@ -180,7 +179,7 @@ const startConsumer = async () => {
 			updateCacheWithValue(message, channel);
 		});
 
-    logger.info(`[BROKER] Consumer started`);
+    logger.debug(`[BROKER] Consumer started`);
 	} catch (error) {
     logger.error({ message: `[BROKER] Failed to start consumer`, error });
 		console.error('RabbitMQ had an error starting the consumer', error);
@@ -193,19 +192,20 @@ redisClient.on("error", (error) => {
   logger.error({ message: `[CACHE] Failed to connect to Redis`, error });
   console.error(`Ups : ${error}`)
 });
-const redisConfig = { redis: { port: 6379, host: 'redis' } };
 
 let periodicQueue;
 redisClient.connect().then(() => {
-  periodicQueue = new Queue('periodicQueue', {
+  periodicQueue = new Queue('periodicQueue', 'redis://redis:6379',{
     defaultJobOptions: {
       timeout: 5000,    // 5 seconds
-    },
-    redisConfig
+    }
   });
-}).catch((error) => {
-  logger.error({ message: `[WORKER] Failed to connect to Redis`, error });
-  console.error('Redis had an error connecting to the cache', error);
+  
+  // Listen for errors on the queue
+  periodicQueue.on('error', (error) => {
+    logger.error(`[WORKER] Failed to create queue in cache.js: ${error}`);
+    console.error(`An error occurred while creating the queue in cache.js: ${error}`);
+  });
 });
 
 startConsumer();
