@@ -49,6 +49,11 @@ export default function NewAdPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
+        if(localStorage.getItem('type') == '"C"'){
+            console.log("user is a consumer");
+            navigate('/consumer');
+            return;
+        }
         if (localStorage.getItem('email') != null) {
             console.log(localStorage.getItem('email') + " is logged in");
             console.log("type: " + localStorage.getItem('type'));

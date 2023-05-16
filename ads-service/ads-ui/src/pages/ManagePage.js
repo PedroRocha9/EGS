@@ -86,6 +86,11 @@ export default function UserPage() {
     //on page load, read user from props
 
     useEffect(() => {
+        if(localStorage.getItem('type') == '"C"'){
+            console.log("user is a consumer");
+            navigate('/consumer');
+            return;
+        }
         if (localStorage.getItem('email') != null) {
             console.log(localStorage.getItem('email') + " is logged in");
             fetch('http://localhost:5000/v1/profile', {
@@ -163,7 +168,7 @@ export default function UserPage() {
     };
 
     const handleNewAd = () => {
-        window.location.href = '/new-ad';
+        navigate('/new-ad');
         };
 
     const handleDeleteAd = () => {

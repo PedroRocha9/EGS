@@ -38,6 +38,7 @@ export default function LoginForm() {
                     localStorage.setItem('id', JSON.stringify(data.id));
                     localStorage.setItem('name', JSON.stringify(data.name));
                     localStorage.setItem('type', JSON.stringify(data.type));
+                    console.log(localStorage.getItem('email') + " is logged in as " + localStorage.getItem('type'));
                 });
                 navigate('/dashboard', { replace: true });
             } else {
@@ -53,7 +54,7 @@ export default function LoginForm() {
     return (
         <>
         <Stack spacing={3}>
-            <TextField name="email" label="Email address" id='email' onChange={(e) => setEmail(e.target.value)} />
+            <TextField name="email" label="Email address" id='email' onChange={(e) => setEmail(e.target.value)} onInput={(e) => setEmail(e.target.value)} />
 
             <TextField
                 name="password"

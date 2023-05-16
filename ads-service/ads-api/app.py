@@ -1,7 +1,6 @@
-import math
+import random
 from flask import Flask, jsonify, request, render_template_string, render_template, redirect
 from uuid import uuid4
-import json
 import hashlib
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS
@@ -54,7 +53,7 @@ def get_account_type(token):
         return "Internal error"
     
 
-@app.route('/v1/ads/<int:ad_id>', methods=['DELETE', 'GET'])
+@app.route('/v1/ads/<int:ad_id>', methods=['DELETE', 'GET']) # type: ignore
 def update_ad(ad_id=None):
     if request.method == 'GET':
         #validate data
@@ -110,6 +109,8 @@ def get_ads():
     if request.method == 'POST':
         data = request.get_json()
         token = request.headers.get('Authorization')
+        if token is None:
+            return jsonify({'message': 'Missing token'}), 401
         token = token.split(' ')[1]
         #check if user is advertiser
         users = cur.execute("SELECT * FROM users").fetchall()
@@ -135,7 +136,9 @@ def get_ads():
     
     elif request.method == 'GET':
         #Get request info
-        location = request.args.get('location').lower()
+        location = request.args.get('location')
+        if location is not None:
+            location = location.lower()
         age_range = request.args.get('age_range')
         publisher_id = request.args.get('publisher_id')
 
@@ -165,23 +168,23 @@ def get_ads():
         else:
             ads = cur.execute("SELECT * FROM ads").fetchall()
 
+        #select ads that are active
+        ads = [ad for ad in ads if ad[11] == 1]
 
         if len(ads) == 0:
             return jsonify({'message': 'No ads found'}), 404
         
-        ads_to_return = []
-        for ad in ads:
-            link = "http://localhost:5000/v1/ads/" + str(ad[0])
-            if ad[3] == "CPC":
-                js_code = render_template('ad_href.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2], ad_redirect=link)
-            else:
-                js_code = render_template('ad.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2])
-            ads_to_return.append(js_code)
-            cur.execute("UPDATE ads SET impressions = ? WHERE id = ?", (ad[7] + 1, ad[0]))
+        #selec a random ad
+        ad = random.choice(ads)
+        link = "http://localhost:5000/v1/ads/" + str(ad[0])
+        if ad[3] == "CPC":
+            js_code = render_template('ad_cpc.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2], ad_redirect=link)
+        else:
+            js_code = render_template('ad_cpm.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2])
 
+        cur.execute("UPDATE ads SET impressions = ? WHERE id = ?", (ad[7] + 1, ad[0]))
         conn.commit()
-        return jsonify({'ads': ads_to_return}), 200
-                
+        return jsonify({'ad': js_code}), 200                
     
     return jsonify({'message': 'Invalid request'}), 400
     
@@ -205,6 +208,7 @@ def create_user():
     print("New user id: " + str(new_id))
     token = get_token_from_request(new_id, data['email'], data['type'])
     type = "A" if data['type'] == "advertiser" else "C"
+    #password_hash = hashlib.sha256(data['password'].encode('utf-8')).hexdigest()
     cur.execute("INSERT INTO users (type, name, email, password, token) VALUES (?, ?, ?, ?, ?)", \
                  (type, data['name'], data['email'], data['password'], token))
 
@@ -219,7 +223,9 @@ def login():
     if 'email' not in data or 'password' not in data:
         return jsonify({'message': 'Missing required data'}), 400
     #check if email and password match
-    cur.execute("SELECT * FROM users WHERE email = ? AND password = ?", (data['email'], data['password']))
+    password = data['password'] 
+    #password_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    cur.execute("SELECT * FROM users WHERE email = ? AND password = ?", (data['email'], password))
     user = cur.fetchone()
     if user is not None:
         return jsonify({'token': get_token(user), 'id' : user[0], 'name': user[2], 'email': user[3], 'type': user[1]}), 200

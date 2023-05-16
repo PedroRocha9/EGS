@@ -10,6 +10,7 @@ import Page404 from './pages/Page404';
 import AdsPage from './pages/AdsPage';
 import NewAdPage from './pages/NewAdPage';
 import DashboardAppPage from './pages/DashboardAppPage';
+import ConsumerPage from './pages/ConsumerPage';
 
 import { useState, useEffect } from 'react';
 
@@ -29,8 +30,13 @@ export default function Router() {
         ],
         },
         {
-        path: 'login',
-        element: <LoginPage />,
+            path: 'consumer',
+            element: <ConsumerPage />,
+
+        },
+        {
+            path: 'login',
+            element: <LoginPage />,
         },
         {
             path: 'register',
