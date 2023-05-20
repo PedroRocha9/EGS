@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
+import  Icon  from 'react-native-vector-icons/MaterialIcons';
 
 function Tweet({ user, text, imageUrl }) {
   return (
     <View style={styles.tweet}>
       <View style={styles.userInfo}>
+        <Icon name="person" size={20} style={styles.avatar}/>
         <Text style={styles.username}>{user}</Text>
-        <Image source={require('../assets/profile-placeholder.png')} style={styles.avatar}/>
       </View>
 
       <View style={styles.tweetContent}>
@@ -48,11 +49,8 @@ const styles = {
     marginBottom: 10,
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    color: '#E5E9F0',
     marginRight: 10,
-    marginLeft: 10,
   },
   username: {
     fontWeight: 'bold',

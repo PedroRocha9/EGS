@@ -147,7 +147,9 @@ def get_ads():
         
         #validade publisher id
         isvalid = False
-        publishers = cur.execute("SELECT * FROM users WHERE type = ?", ("C",)).fetchall()
+        cur2 = conn.cursor()
+        publishers = cur2.execute("SELECT * FROM users WHERE type = ?", ("C",)).fetchall()
+        cur2.close()
         for publisher in publishers:
             if str(publisher[0]) == str(publisher_id):
                 isvalid = True
@@ -159,15 +161,16 @@ def get_ads():
         if age_range not in age_groups and age_range:
             return jsonify({'message': 'Invalid age range'}), 400
 
+        cur3 = conn.cursor()
         if location is not None and age_range is not None:
-            ads = cur.execute("SELECT * FROM ads WHERE location = ? AND age_range = ?", (location, age_range)).fetchall()
+            ads = cur3.execute("SELECT * FROM ads WHERE location = ? AND age_range = ?", (location, age_range)).fetchall()
         elif location is not None:
-            ads = cur.execute("SELECT * FROM ads WHERE location = ?", (location,)).fetchall()
+            ads = cur3.execute("SELECT * FROM ads WHERE location = ?", (location,)).fetchall()
         elif age_range is not None:
-            ads = cur.execute("SELECT * FROM ads WHERE age_range = ?", (age_range,)).fetchall()
+            ads = cur3.execute("SELECT * FROM ads WHERE age_range = ?", (age_range,)).fetchall()
         else:
-            ads = cur.execute("SELECT * FROM ads").fetchall()
-
+            ads = cur3.execute("SELECT * FROM ads").fetchall()
+        cur3.close()
         #select ads that are active
         ads = [ad for ad in ads if ad[11] == 1]
 
@@ -176,15 +179,20 @@ def get_ads():
         
         #selec a random ad
         ad = random.choice(ads)
-        link = "http://localhost:5000/v1/ads/" + str(ad[0])
+        link = "http://192.168.31.206:5000/v1/ads/" + str(ad[0])
         if ad[3] == "CPC":
             js_code = render_template('ad_cpc.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2], ad_redirect=link)
         else:
             js_code = render_template('ad_cpm.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2])
 
-        cur.execute("UPDATE ads SET impressions = ? WHERE id = ?", (ad[7] + 1, ad[0]))
+        cur4 = conn.cursor()
+        cur4.execute("UPDATE ads SET impressions = ? WHERE id = ?", (ad[7] + 1, ad[0]))
         conn.commit()
-        return jsonify({'ad': js_code}), 200                
+        cur4.close()
+        if ad[3] == "CPC":
+            return jsonify({'ad': js_code, 'ad_id': ad[0], 'ad_creative': ad[6], 'ad_description': ad[2], 'ad_redirect': link}), 200                
+        else:
+            return jsonify({'ad': js_code, 'ad_id': ad[0], 'ad_creative': ad[6], 'ad_description': ad[2]}), 200
     
     return jsonify({'message': 'Invalid request'}), 400
     
