@@ -3,7 +3,7 @@ const { deleteFromCache } = require("./cache");
 const logger = require('./logger');
 
 const fetchFromDatabase = async (collectionName, param, paramValue, dbQuery) => {
-  const mongoClient = new MongoClient("mongodb://mongodb_service:27017");
+  const mongoClient = new MongoClient("mongodb://mongodb:27017");
   
   try {
     await mongoClient.connect();

@@ -4,7 +4,7 @@ const redis  = require('redis');
 const { fetchFromTwitter } = require('./twitter');
 const logger = require('./logger');
 
-const rabbitmqUrl = 'amqp://rabbitmq_service';
+const rabbitmqUrl = 'amqp://rabbitmq';
 const updateQueue = 'cache_update';
 const setQueue = 'cache_set';
 

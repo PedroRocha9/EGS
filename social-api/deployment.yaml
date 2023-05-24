@@ -1,0 +1,273 @@
+# RabbitMQ deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: egs-mixit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3-management
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+
+# RabbitMQ service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: egs-mixit
+spec:
+  ports:
+    - name: default
+      port: 5672
+      targetPort: 5672
+    - name: management
+      port: 15672
+      targetPort: 15672
+  selector:
+    app: rabbitmq
+
+
+# Redis deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: egs-mixit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:latest
+          ports:
+            - containerPort: 6379
+
+# Redis service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: egs-mixit
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    app: redis
+
+
+# MongoDB deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: egs-mixit
+spec:
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - image: bitnami/mongodb:latest
+        name: mongodb
+        volumeMounts:
+        - mountPath: /data/db
+          name: mongodb
+      restartPolicy: Always
+      volumes:
+      - name: mongodb
+        persistentVolumeClaim:
+          claimName: mongodb-data-pvc
+
+# MongoDB service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: egs-mixit
+spec:
+  ports:
+    - port: 27017
+      targetPort: 27017
+  selector:
+    app: mongodb
+
+
+# # Graylog deployment
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: graylog
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: graylog
+#   template:
+#     metadata:
+#       labels:
+#         app: graylog
+#     spec:
+#       containers:
+#         - name: graylog
+#           image: graylog/graylog:5.0.7
+#           ports:
+#             - containerPort: 5044
+#             - containerPort: 5140
+#             - containerPort: 5555
+#             - containerPort: 9000
+#             - containerPort: 12201
+#             - containerPort: 13301
+#             - containerPort: 13302
+#           env:
+#             - name: GRAYLOG_HTTP_BIND_ADDRESS
+#               value: "0.0.0.0:9000"
+#             # add other environment variables as needed
+#           readinessProbe:
+#             httpGet:
+#               path: /api # replace with your app's health check endpoint
+#               port: 9000
+#             initialDelaySeconds: 30
+#             periodSeconds: 10
+#           volumeMounts:
+#             - name: graylog-data
+#               mountPath: /graylog/data
+#             - name: graylog-logs
+#               mountPath: /graylog/logs
+
+# # Graylog service
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: graylog
+# spec:
+#   ports:
+#     - name: beats
+#       port: 5044
+#       targetPort: 5044
+#     - name: syslog
+#       port: 5140
+#       targetPort: 5140
+#     - name: raw-tcp
+#       port: 5555
+#       targetPort: 5555
+#     - name: api
+#       port: 9000
+#       targetPort: 9000
+#     - name: gelf
+#       port: 12201
+#       targetPort: 12201
+#     - name: forwarder-data
+#       port: 13301
+#       targetPort: 13301
+#     - name: forwarder-config
+#       port: 13302
+#       targetPort: 13302
+#   selector:
+#     app: graylog
+
+
+# App deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+
+  namespace: egs-mixit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      # initContainers:
+      #   - name: init-wait-for-rabbitmq
+      #     image: busybox:1.28
+      #     command:
+      #       - '/bin/sh'
+      #       - '-c'
+      #       - >
+      #         until nc -z rabbitmq 5672; do
+      #           echo "RabbitMQ is unavailable - sleeping";
+      #           sleep 1;
+      #         done;
+      #         echo "RabbitMQ is up - starting app";
+      #   - name: init-wait-for-graylog
+      #     image: busybox:1.28
+      #     command:
+      #       - '/bin/sh'
+      #       - '-c'
+      #       - >
+      #         until nc -z graylog 9000; do
+      #           echo "Graylog is unavailable - sleeping";
+      #           sleep 5;
+      #         done;
+      #         echo "Graylog is up - starting app";
+      containers:
+        - name: app
+          image: registry.deti:5432/egs-mixit/mixit-api:v1
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+          command:
+            - '/bin/sh'
+            - '-c'
+            - >
+              until nc -z rabbitmq 5672; do
+                echo "RabbitMQ is unavailable - sleeping";
+                sleep 1;
+              done;
+              echo "RabbitMQ is up - starting app";
+              npm run dev
+
+# App service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+  namespace: egs-mixit
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: app
