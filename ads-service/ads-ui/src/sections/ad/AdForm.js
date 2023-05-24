@@ -18,9 +18,11 @@ export default function AdForm() {
     const [url, setUrl] = useState('');
     const [target, setTarget] = useState('');
     const [redirect, setRedirect] = useState('');
+    const hostAddress = window.location.origin;
+    const [ip, port] = hostAddress.split(':');
 
     const handleClick = () => {
-        fetch('http://localhost:5000/v1/ads', {
+        fetch('http://'+ip+':8010/v1/ads', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

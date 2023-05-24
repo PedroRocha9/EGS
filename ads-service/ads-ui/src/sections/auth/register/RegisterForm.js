@@ -18,6 +18,8 @@ export default function RegisterForm() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [userType, setUserType] = useState('');
+    const hostAddress = window.location.host;
+    const [ip, port] = hostAddress.split(':');
         
 
     const handleClick = () => {
@@ -27,7 +29,7 @@ export default function RegisterForm() {
             return;
         }
 
-        fetch('http://localhost:5000/v1/users', {
+        fetch('http://'+ip+':8010/v1/users', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

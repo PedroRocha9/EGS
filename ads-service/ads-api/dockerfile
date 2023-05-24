@@ -16,9 +16,9 @@ RUN pip install --trusted-host --no-cache-dir -r requirements.txt
 
 COPY . .
 
-#Expose port 5000
+#Expose port 8010
 
-EXPOSE 5000
+EXPOSE 8010
 
 #Run app.py when the container launches.
 

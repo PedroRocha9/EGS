@@ -22,6 +22,8 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 )
 
 app.register_blueprint(swaggerui_blueprint)
+HOST = ''
+PORT=8010
 
 #Connect to the sqlite database
 conn = sqlite3.connect('sql/database.db', check_same_thread=False)
@@ -52,6 +54,11 @@ def get_account_type(token):
     else:
         return "Internal error"
     
+@app.route('/')
+def index():
+    global HOST
+    HOST = request.host.split(":")[0] + ":"+str(PORT)
+    return jsonify({'message': 'Welcome to the advertisement service', 'documentation': HOST + '/api/docs'})
 
 @app.route('/v1/ads/<int:ad_id>', methods=['DELETE', 'GET']) # type: ignore
 def update_ad(ad_id=None):
@@ -104,7 +111,7 @@ def update_ad(ad_id=None):
 #Endpoint to get ads (location and age_range are optional)
 @app.route('/v1/ads', methods=['GET', 'POST'])
 def get_ads():
-    
+    HOST = request.host.split(":")[0] + ":"+str(PORT)
     #check if the request is a post or get or delete
     if request.method == 'POST':
         data = request.get_json()
@@ -179,7 +186,7 @@ def get_ads():
         
         #selec a random ad
         ad = random.choice(ads)
-        link = "http://192.168.31.206:5000/v1/ads/" + str(ad[0])
+        link = "http://"+HOST+"/v1/ads/" + str(ad[0])
         if ad[3] == "CPC":
             js_code = render_template('ad_cpc.html', ad_id=ad[0], ad_creative=ad[6], ad_description=ad[2], ad_redirect=link)
         else:
@@ -397,5 +404,5 @@ def get_user_analytics(adv_id):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0',port=PORT, debug=True)
 

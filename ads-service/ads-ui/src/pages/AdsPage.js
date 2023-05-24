@@ -12,6 +12,10 @@ import { useNavigate } from 'react-router-dom';
 
 export default function ProductsPage() {
 
+    const hostAddress = window.location.host;
+    const [ip, port] = hostAddress.split(':');
+
+
     const navigate = useNavigate();
     
     const [ads, setAds] = useState([]);
@@ -19,7 +23,7 @@ export default function ProductsPage() {
     useEffect(() => {
         if (localStorage.getItem('email') != null) {
             console.log(localStorage.getItem('email') + " is logged in");
-            fetch('http://localhost:5000/v1/profile', {
+            fetch('http://'+ip+':8010/v1/profile', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

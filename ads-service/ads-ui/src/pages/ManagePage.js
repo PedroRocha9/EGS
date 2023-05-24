@@ -80,6 +80,8 @@ function applySortFilter(array, comparator, query) {
 export default function UserPage() {
 
     const [ads, setAds] = useState([]);
+    const hostAddress = window.location.host;
+    const [ip, port] = hostAddress.split(':');
 
     const navigate = useNavigate();
 
@@ -93,7 +95,7 @@ export default function UserPage() {
         }
         if (localStorage.getItem('email') != null) {
             console.log(localStorage.getItem('email') + " is logged in");
-            fetch('http://localhost:5000/v1/profile', {
+            fetch('http://'+ip+':8010/v1/profile', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -172,7 +174,7 @@ export default function UserPage() {
         };
 
     const handleDeleteAd = () => {
-        fetch('http://localhost:5000/v1/ads/' + id, {
+        fetch('http://'+ip+':8010/v1/ads/' + id, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -182,7 +184,7 @@ export default function UserPage() {
         .then((response) => {
             if (response.status === 200) {
                 console.log("deleted");
-                fetch('http://localhost:5000/v1/profile', {
+                fetch('http://'+ip+':8010/v1/profile', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',

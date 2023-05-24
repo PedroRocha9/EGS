@@ -35,6 +35,8 @@ export default function DashboardAppPage() {
     const [bestClickAd, setBestClickAd] = useState(null);
     const [bestImpressionAd, setBestImpressionAd] = useState(null);
     const [hasData, setHasData] = useState(true);
+    const hostAddress = window.location.host;
+    const [ip, port] = hostAddress.split(':');
 
     //on page load, read user from props
 
@@ -50,7 +52,7 @@ export default function DashboardAppPage() {
 
             //get user data from backend
 
-            fetch('http://localhost:5000/v1/analytics/advertiser/' + localStorage.getItem('id'), {
+            fetch('http://'+ip+':8010/v1/analytics/advertiser/' + localStorage.getItem('id'), {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
