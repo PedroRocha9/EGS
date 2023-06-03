@@ -1,0 +1,115 @@
+.App {
+  text-align: center;
+  /* center the content */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 10vh;
+}
+
+.header { 
+  /* push 10 vh to down */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-items: top;
+  justify-content: top;
+  /* make the font size dynamic */
+  font-size: calc(10px + 2vmin);
+  color: #6b86c3;
+}
+
+/* make a shadow box in the center of the screen */
+.box {
+  /* put it in the center */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* make the box size adaptive consodering the screen size */
+  width: 30vw;
+  height: 50vh;  
+  margin: auto;
+  /* shadow-xl mt-32 p-10 text-gray-700 bg-white rounded-lg */
+  box-shadow: 0 0 10px 5px #dadada;
+  background-color: #f1f1f1;
+  border: 1px solid #dedede;
+  border-radius: 10px;
+  font-size: calc(10px );
+  color: #121315;
+}
+
+
+
+/* make a column where the buttons are aligned in the center in the same column */
+.Auth_button {
+  /* click on the button */
+  cursor: pointer;
+  /* put the content in the left of the button */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: left;
+  height: 8vh;
+  margin-top: 4vh;
+  /* make the width adaptative because can be usable by phone or computer */
+  width: 30vw;
+  /* shadow-md mt-4 p-4 text-gray-700 bg-white rounded-lg */
+  background-color: #3d4557;
+  color: #f1f1f1;
+  border: 3px solid #dedede;
+  border-radius: 10px;
+  font-size: calc(5px + 2vmin);
+  color: #ffffff;
+}
+
+.google {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  /* put it in the left */
+  margin-left: 5%;
+  margin-right: 15%;
+}
+
+.twitter{
+  position: relative;
+  width: 48px;
+  height: 48px;
+  /* put it in the left */
+  margin-left: 5%;
+  margin-right: 15%;
+}
+
+@media (max-width: 768px) {
+  .App {
+    padding-top: 25vh;
+  }
+  .header {
+    font-size: calc(15px + 2vmin);
+  }
+  .box {
+    width: 80vw;
+    height: 50vh;
+  }
+  .Auth_button {
+    width: 50vw;
+    font-size: 4vw;
+  }
+  .google {
+    margin-right: 10%;
+    width: 40px;
+    height: 40px;
+  }
+  .twitter {
+    margin-right: 10%;
+    width: 40px;
+    height: 40px;
+  }
+
+} 
+
+
+
