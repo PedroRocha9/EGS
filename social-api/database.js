@@ -29,7 +29,7 @@ const fetchFromDatabase = async (collectionName, param, paramValue, dbQuery) => 
 };
   
 const addToDatabase = async (collectionName, data) => {
-  const mongoClient = new MongoClient("mongodb://localhost:27017");
+  const mongoClient = new MongoClient("mongodb://mongodb:27017");
   
   try {
     await mongoClient.connect();
@@ -47,7 +47,7 @@ const addToDatabase = async (collectionName, data) => {
 };
 
 const updateDatabase = async (collectionName, param, paramValue, newValues) => {
-  const mongoClient = new MongoClient("mongodb://localhost:27017");
+  const mongoClient = new MongoClient("mongodb://mongodb:27017");
 
   try {
     await mongoClient.connect();
@@ -68,7 +68,7 @@ const updateDatabase = async (collectionName, param, paramValue, newValues) => {
 };
 
 const deleteFromDatabase = async (collectionName, param, paramValue) => {
-  const mongoClient = new MongoClient("mongodb://localhost:27017");
+  const mongoClient = new MongoClient("mongodb://mongodb:27017");
 
   try {
     await mongoClient.connect();

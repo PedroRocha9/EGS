@@ -2,6 +2,7 @@ const { fetchFromDatabase, addToDatabase, updateDatabase, deleteFromDatabase } =
 const { fetchFromCache } = require("./cache");
 const { startWorker } = require("./worker");
 const logger = require('./logger');
+const tweetsRequestedCounter = require('./metrics');
 require('dotenv').config();
 
 startWorker();
@@ -119,6 +120,11 @@ const handleUserPostResponse = async (req, res) => {
       next_token = next_token.next_token;
 
     const tweets = await fetchFromCache('user_tweets', data.external_information.id, null, next_token);
+
+    // Iterate through tweets and increment tweetsRequestedCounter
+    JSON.parse(tweets).data.forEach(_ => {
+      tweetsRequestedCounter.inc();
+    });
 
     return res.status(200).json(JSON.parse(tweets));
   } catch (error) {
@@ -282,6 +288,11 @@ const handleTimelineResponse = async (req, res) => {
 
     const tweets = await fetchFromCache('timeline', data.external_information.id, null, next_token);
 
+    // Iterate through tweets and increment tweetsRequestedCounter
+    JSON.parse(tweets).data.forEach(_ => {
+      tweetsRequestedCounter.inc();
+    });
+
     return res.status(200).json(JSON.parse(tweets));
   } catch (error) {
     console.log(error);   // Debugging purposes
@@ -314,7 +325,7 @@ const handlePostResponse = async (req, res) => {
   }
 };
 
-// Get the tweet endpoint handler
+// Get the tweet replies endpoint handler
 const handlePostRepliesResponse = async (req, res) => {
   const param = Object.keys(req.params)[0];
   let next_token = req.query;
@@ -337,6 +348,11 @@ const handlePostRepliesResponse = async (req, res) => {
       noRepliesFoundHandler(req, res, param);
       return;
     }
+
+    // Iterate through tweets and increment tweetsRequestedCounter
+    JSON.parse(tweets).data.forEach(_ => {
+      tweetsRequestedCounter.inc();
+    });
 
     return res.status(200).json(JSON.parse(tweets));
   } catch (error) {

@@ -63,8 +63,8 @@ const fetchUserFromTwitter = async (id, query) => {
     logger.info(`[TWITTER] Fetched User Data from API for user with id: ${id}`);
     return userInfo.data[0];
   } catch (error) {
-    logger.error({ message: `[TWITTER] Failed to fetch User Data from API for user with id: ${id}`, error });
-    console.log('Twitter API had an error while fetching info', error);
+    logger.error({ message: `[TWITTER] Failed to fetch User Data from API for user with id: ${id}`, error, code: error.code });
+    console.log('Twitter API had an error while fetching info', error, 'Error code:', error.code);
   }
 };
 

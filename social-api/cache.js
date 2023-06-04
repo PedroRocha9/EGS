@@ -83,7 +83,7 @@ const updateCacheFromAPI = async (message, channel) => {
     // WATCHOUT FOR RATE LIMIT
     repeat: {
       every: 30000,     // Every 30 seconds
-      limit: 2          // 2 times
+      limit: 1          // 1 time
     }
   });
   console.log('Added periodic update to queue');
@@ -141,7 +141,7 @@ const periodicUpdateCacheFromAPI = async (data) => {
 // Producer function
 const publishMessage = async (message, queueName) => {
   try {
-    // Connect to RabbitMQ
+    // // Connect to RabbitMQ
     connection = await amqp.connect(rabbitmqUrl);
     channel = await connection.createChannel();
 
@@ -157,13 +157,30 @@ const publishMessage = async (message, queueName) => {
   }
 };
 
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
 // Consumer function
 const startConsumer = async () => {
+  let connection;
+  let channel
+
   try {
-    // Connect to RabbitMQ
-    const connection = await amqp.connect(rabbitmqUrl);
-    const channel = await connection.createChannel();
-    
+    while (true) {
+      try {
+        // Connect to RabbitMQ
+        connection = await amqp.connect(rabbitmqUrl);
+        channel = await connection.createChannel();
+        console.log('RabbitMQ connection successful on consumer');
+        logger.info(`[BROKER] RabbitMQ connected successfully`);
+        
+        break;
+      } catch (err) {
+        console.error('RabbitMQ connection failed on consumer, retrying in 5 seconds');
+        logger.error({ message: `[BROKER] RabbitMQ connection failed on consumer, retrying in 5 seconds`, err });
+        await delay(5 * 1000);
+      }
+    }
+
 		// Queue for user triggered updates (cache hit)
 		await channel.assertQueue(updateQueue, { durable: true });
 		// Queue for user triggered updates (cache miss)
@@ -186,28 +203,40 @@ const startConsumer = async () => {
 	}
 };
 
-/* Start the redis client and broker consumer */
-const redisClient = redis.createClient({ url: 'redis://redis:6379' });
-redisClient.on("error", (error) => {
-  logger.error({ message: `[CACHE] Failed to connect to Redis`, error });
-  console.error(`Ups : ${error}`)
-});
-
 let periodicQueue;
-redisClient.connect().then(() => {
-  periodicQueue = new Queue('periodicQueue', 'redis://redis:6379',{
-    defaultJobOptions: {
-      timeout: 5000,    // 5 seconds
-    }
-  });
-  
-  // Listen for errors on the queue
-  periodicQueue.on('error', (error) => {
-    logger.error(`[WORKER] Failed to create queue in cache.js: ${error}`);
-    console.error(`An error occurred while creating the queue in cache.js: ${error}`);
-  });
-});
+let redisClient;
+const startRedis = async () => {
+  while (1) {
+    try {
+      /* Start the redis client and broker consumer */
+      redisClient = redis.createClient({ url: 'redis://redis:6379' });
+      console.log('Redis connected');
+      logger.info(`[CACHE] Connected to Redis`);
 
+      break;
+    } catch (err) {
+      console.error('Redis connection failed, retrying in 5 seconds');
+      logger.error({ message: `[CACHE] Failed to connect to Redis`, err });
+      await delay(5 * 1000);
+    }
+  }
+
+  redisClient.connect().then(() => {
+    periodicQueue = new Queue('periodicQueue', 'redis://redis:6379',{
+      defaultJobOptions: {
+        timeout: 5000,    // 5 seconds
+      }
+    });
+    
+    // Listen for errors on the queue
+    periodicQueue.on('error', (error) => {
+      logger.error({message: `[WORKER] Failed to create queue in cache.js`, error});
+      console.error(`An error occurred while creating the queue in cache.js: ${error}`);
+    });
+  });
+};
+
+startRedis();
 startConsumer();
 
 module.exports = { fetchFromCache, deleteFromCache, periodicUpdateCacheFromAPI };
