@@ -17,7 +17,7 @@
   "tags": [
     {
       "name": "ads",
-      "description": "Register / information about advertisements on the platform"
+      "description": "Register / Information about advertisements on the platform"
     },
     {
       "name": "users",
@@ -34,7 +34,7 @@
         "tags": [
           "ads"
         ],
-        "summary": "Get ads html snippet based on filtering",
+        "summary": "Get ad's html snippet based on filtering",
         "description": "Get existing ads by entering optional parameters and updating the ad's impressions counter",
         "operationId": "get_ads",
         "parameters": [
