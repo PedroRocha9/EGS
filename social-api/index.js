@@ -15,7 +15,7 @@ const PORT = process.env.PORT || static.PORT;
 const IP = process.env.IP || "127.0.0.1";
 const PROTOCOL = process.env.PROTOCOL ? "https" : "http";
 // const URL = PROTOCOL + "://" + IP + ":" + (process.env.PORT ? process.env.PORT : PORT);
-const URL = "http://app-egs-mixit.deti:80";
+const URL = "http://social-api-mixit.deti";
 
 
 // Expose public content

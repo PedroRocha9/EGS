@@ -51,7 +51,6 @@ const handleUserResponse = async (req, res) => {
 
     return res.status(200).json({ data: data });
   } catch (error) {
-    console.log('aqui');
     console.log(error);   // Debugging purposes
     return res.status(500).json({ errors: "Internal server error" });
   }
