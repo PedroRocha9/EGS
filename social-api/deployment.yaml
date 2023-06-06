@@ -85,6 +85,7 @@ metadata:
   name: mongodb
   namespace: egs-mixit
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: mongodb
