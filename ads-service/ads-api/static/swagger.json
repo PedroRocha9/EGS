@@ -114,14 +114,27 @@
                     },
                     "pricing_model": {
                       "type": "string",
-                      "example": "cost-per-clicks"
+                      "example": "CPC"
                     },
-                    "target_audience": {
-                      "$ref": "#/components/schemas/target_audience"
+                    "age_range": {
+                      "type": "string",
+                      "example": "youth"
+                    },
+                    "location": {
+                      "type": "string",
+                      "example": "portugal"
                     },
                     "ad_creative": {
                       "type": "string",
-                      "example": "https://example.com/pingodoce/ad2.jpg"
+                      "example": "https://play-lh.googleusercontent.com/-KY7h2o5K2v9RgHpT_AGus3CfkE9FqEyGpxqGhLApkjt1RR_7m83pHM8tA2nWnYXNUnb"
+                    },
+                    "target": {
+                      "type": "integer",
+                      "example": 100
+                    },
+                    "redirect": {
+                      "type": "string",
+                      "example": "https://wwww.pingodoce.pt"
                     }
                   }
                 }
@@ -188,7 +201,7 @@
                 {
                     "name": "ad_id",
                     "in": "path",
-                    "description": "The ID of the ad to be deleted",
+                    "description": "The ID of the ad to be updated",
                     "required": true,
                     "schema": {
                         "type": "integer"
@@ -233,7 +246,7 @@
                   },
                   "password": {
                     "type": "string",
-                    "example": "pingodoce123"
+                    "example": "password123"
                   },
                   "type": {
                     "type": "string",
