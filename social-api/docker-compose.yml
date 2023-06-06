@@ -3,7 +3,7 @@ version: '3.9'
 services:
   rabbitmq:
     image: "rabbitmq:3-management"
-    container_name: rabbitmq_service
+    container_name: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -12,7 +12,7 @@ services:
   
   redis:
     image: "redis:latest"
-    container_name: redis_service
+    container_name: redis
     ports:
       - "6379:6379"
     networks:
@@ -20,7 +20,7 @@ services:
 
   mongodb:
     image: "mongo:latest"
-    container_name: mongodb_service
+    container_name: mongodb
     ports:
       - "27017:27017"
     networks:
@@ -93,10 +93,37 @@ services:
     networks:
       - backend
 
+  prometheus:
+    image: prom/prometheus:latest
+    restart: always
+    volumes:
+      - ./prometheus:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=.'
+    ports:
+      - 9090:9090
+    networks:
+      - backend
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: always
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    ports:
+      - 3002:3000
+    networks:
+      - backend
+    depends_on:
+      - prometheus
+
   app:
     build:
       context: .
-    container_name: app_service
+    container_name: app
     ports:
       - "3000:3000"
     depends_on:
@@ -120,6 +147,8 @@ volumes:
   os_data:
   graylog_data:
   graylog_journal:
+  prometheus_data: {}
+  grafana_data: {}
 
 networks:
   api:

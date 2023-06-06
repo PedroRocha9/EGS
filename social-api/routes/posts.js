@@ -2,7 +2,13 @@ const express = require('express');
 const router = express.Router();
 const { handleUserPostResponse, handleTimelineResponse, handlePostResponse, handlePostRepliesResponse, handlePostLikingUsersResponse } = require('../responses');
 const logger = require('../logger');
+const tweetsRequestedCounter = require('../metrics');
 
+
+router.get("/:id", async (req, res) => {
+  await handlePostResponse(req, res);
+  tweetsRequestedCounter.inc();
+});
 
 // Middleware to log request info
 router.use((req, res, next) => {
@@ -144,6 +150,7 @@ router.get("/:uuid/timeline", async (req, res) => {
  */
 router.get("/:id", async (req, res) => {
   await handlePostResponse(req, res);
+  tweetsRequestedCounter.inc();
 });
 
 /**
@@ -186,6 +193,7 @@ router.get("/:id", async (req, res) => {
  */
 router.get("/:id/replies", async (req, res) => {
   await handlePostRepliesResponse(req, res);
+  tweetsRequestedCounter.inc();
 });
 
 
@@ -229,6 +237,7 @@ router.get("/:id/replies", async (req, res) => {
  */
 router.get("/:id/liking_users", async (req, res) => {
   await handlePostLikingUsersResponse(req, res);
+  tweetsRequestedCounter.inc();
 });
 
 module.exports = router;

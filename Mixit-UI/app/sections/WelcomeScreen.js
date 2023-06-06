@@ -1,18 +1,7 @@
 import React from 'react';
 import { StyleSheet, Image, Text, View, TouchableOpacity} from 'react-native';
 
-
-// interface WelcomeScreenProps {
-//     navigation: any;
-// }
-
-
-// function WelcomeScreen(props: WelcomeScreenProps) {
 function WelcomeScreen({navigation}) {
-
-    // const toLogin = () => {
-    //     props.navigation.navigate("Login");
-    // }
 
     return (
         <View style={styles.container}>
@@ -97,40 +86,29 @@ const styles = StyleSheet.create({
         height: 70,
         backgroundColor: '#004E64',
         borderRadius: 4,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
+    
     loginText: {
         fontSize: 20,
         color: '#D9D9D9',
-        // TODO
-        // textAlign: 'center',
-        // Correct this!!!!!!!!!!!!!
-        paddingHorizontal: 22,
         fontWeight: 'bold',
-        position: 'absolute',
-        top: 20,
-        left: 150,
     },
+    
     registerButton: {
         width: '100%',
         height: 70,
         borderRadius: 4,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
         backgroundColor: '#B9383A',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
+    
     registerText: {
         fontSize: 20,
         color: '#D9D9D9',
-        // TODO
-        // textAlign: 'center',
-        // Correct this!!!!!!!!!!!!!
-        paddingHorizontal: 12,
         fontWeight: 'bold',
-        position: 'absolute',
-        top: 20,
-        left: 150,
     },
 })
 

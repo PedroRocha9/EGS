@@ -1,8 +1,25 @@
-import React from 'react';
-import { SafeAreaView } from 'react-native';
-import { StyleSheet, TouchableOpacity, Text, TextInput, View, Image, StatusBar } from 'react-native';
+import React, {useState} from 'react'
+import { StyleSheet, TouchableOpacity, Text, TextInput, View, Image, StatusBar, Button, Modal } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { WebView } from 'react-native-webview';
 
 function Login({navigation}) {
+
+    const [showWebView, setShowWebView] = useState(false);
+    const [authUrl, setAuthUrl] = useState(''); // hold url to authenticate
+  
+    const handleAuth = (url) => {
+      setAuthUrl(url);
+      setShowWebView(true);
+      setTimeout(() => {
+        setShowWebView(false);
+      }, 5000);  // Close WebView after 5 seconds
+    };
+  
+    const handleGoogleAuth = () => handleAuth('https://google.com/');
+    const handleGithubAuth = () => handleAuth('https://github.com/');
+  
+    
     return (
         <View style={styles.containerGeneric}>
             <View style={styles.containerTopBar}>
@@ -29,9 +46,32 @@ function Login({navigation}) {
                 <TextInput style={styles.inputPass} placeholder="Password" secureTextEntry={true}/>
                 
                 <TouchableOpacity style={styles.loginButton} 
-                onPress={() => navigation.navigate('Timeline')}>
+                onPress={() => navigation.navigate('Home', {screen: 'Timeline'})}>
                     <Text style={styles.loginButtonText}>Login</Text>
                 </TouchableOpacity>
+
+                <View style={styles.container}>
+                    <TouchableOpacity style={styles.button} onPress={handleGoogleAuth}>
+                        <Icon name="google" size={20} color="#FFFFFF" />
+                        <Text style={styles.buttonText}>Login with Google</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.button} onPress={handleGithubAuth}>
+                        <Icon name="github" size={20} color="#FFFFFF" />
+                        <Text style={styles.buttonText}>Login with Github</Text>
+                    </TouchableOpacity>
+
+                    <Modal visible={showWebView} animationType="slide" onRequestClose={() => setShowWebView(false)}>
+                        <WebView
+                        source={{ uri: authUrl }} 
+                        style={{ marginTop: 20 }}
+                        onNavigationStateChange={({ url }) => {
+                            // you can check url here to decide when to close the modal
+                        }}
+                        />
+                        <Button title="Close" backgroundColor='#B9383A' onPress={() => setShowWebView(false)} />
+                    </Modal>
+                </View>
 
                 <TouchableOpacity onPress={() => navigation.navigate('Register')}>
                     <Text style={styles.createAccountText}>I don't have an account yet!</Text>
@@ -127,9 +167,27 @@ const styles = StyleSheet.create({
     createAccountText: {
         color: '#dbdbdb',
         fontSize: 16,
-        marginTop: 20,
+        marginBottom: '10%',
         textDecorationLine: 'underline',
     },
+    container:  {
+        flex: 1,
+        justifyContent: 'center',
+        paddingHorizontal: 10,
+    },
+    button: {
+        backgroundColor: '#004E64',
+        padding: 10,
+        marginVertical: 5,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 5,
+      },
+      buttonText: {
+        color: '#FFFFFF',
+        marginLeft: 10,
+      },
 });
 
 export default Login;

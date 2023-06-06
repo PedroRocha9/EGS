@@ -1,16 +1,20 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View, TouchableOpacity, Text } from 'react-native';
-import  Icon  from 'react-native-vector-icons/MaterialIcons';
+import { ScrollView, StyleSheet, View, TouchableOpacity, Text, Image } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { WebView } from 'react-native-webview';
 
-import Tweet from '../components/Tweet';
-import Navbar from '../components/Navbar';
-import Add from '../components/Add';
 
-function Timeline({ navigation, state }) {
+import Tweet from '../components/Tweet';
+import Add from '../components/Add';
+import logo from '../assets/mixit.png'; 
+
+function Timeline({ navigation }) {
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+      <View style={styles.logoContainer}>
+        <Image source={logo} style={styles.logo} />
+      </View>
+      <TouchableOpacity onPress={() => navigation.navigate('Home', {screen:'Profile'})}>
         <Icon name="person" size={30} style={styles.profile}/>
       </TouchableOpacity>
       <ScrollView style={styles.tweets}>
@@ -26,8 +30,6 @@ function Timeline({ navigation, state }) {
         <View style={styles.separator}/>
         <Add  url="http://192.168.31.206:5000/v1/ads?publisher_id=3"/>
       </ScrollView>
-      
-      
     </View>
   );
 }
@@ -36,6 +38,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#2d2d2d',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: '8%',
+    padding: 10,
+  },
+  logo: {
+    width: 130,  
+    height: 40,  
+    resizeMode: 'contain',
   },
   tweets: {
     flex: 1,
@@ -46,7 +59,6 @@ const styles = StyleSheet.create({
     height: 10,
   },
   profile: {
-    marginTop: '3%',
     marginLeft: '90%',
     color: '#E5E9F0',
   },
