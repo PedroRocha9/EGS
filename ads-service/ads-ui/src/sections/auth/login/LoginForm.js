@@ -23,7 +23,7 @@ export default function LoginForm() {
 
     const handleClick = (email, password) => {
         //fetch
-        fetch('http://'+ip+':8010/v1/login', {
+        fetch('http://ads-api-mixit.deti/v1/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

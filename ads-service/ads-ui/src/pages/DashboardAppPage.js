@@ -52,7 +52,7 @@ export default function DashboardAppPage() {
 
             //get user data from backend
 
-            fetch('http://'+ip+':8010/v1/analytics/advertiser/' + localStorage.getItem('id'), {
+            fetch('http://ads-api-mixit.deti/v1/analytics/advertiser/' + localStorage.getItem('id'), {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

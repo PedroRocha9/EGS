@@ -22,7 +22,7 @@ export default function AdForm() {
     const [ip, port] = hostAddress.split(':');
 
     const handleClick = () => {
-        fetch('http://'+ip+':8010/v1/ads', {
+        fetch('http://ads-api-mixit.deti/v1/ads', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

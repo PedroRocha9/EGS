@@ -29,7 +29,7 @@ export default function RegisterForm() {
             return;
         }
 
-        fetch('http://'+ip+':8010/v1/users', {
+        fetch('http://ads-api-mixit.deti/v1/users', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

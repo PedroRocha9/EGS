@@ -23,7 +23,7 @@ export default function ProductsPage() {
     useEffect(() => {
         if (localStorage.getItem('email') != null) {
             console.log(localStorage.getItem('email') + " is logged in");
-            fetch('http://'+ip+':8010/v1/profile', {
+            fetch('http://ads-api-mixit.deti/v1/profile', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

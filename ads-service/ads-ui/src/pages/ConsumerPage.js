@@ -108,13 +108,13 @@ export default function ConsumerPage() {
                     Perform a GET request to the following URL:
                 </Typography>
                 <Typography sx={{ color: '#81A1C1', mb: 5 }}>
-                    <code>http://{{ip}}:8090/v1/ads?publisher_id={localStorage.getItem('id')}</code>
+                    <code>http://ads-api-mixit.deti/v1/ads?publisher_id={localStorage.getItem('id')}</code>
                 </Typography>
                 <Typography sx={{ color: 'text.secondary', mb: 2 }}>
                     If you want to request a specific ad location or target audience age, you can add the following parameters:
                 </Typography>
                 <Typography sx={{ color: '#81A1C1', mb: 5 }}>
-                    <code>http://{{ip}}:8090/v1/ads?publisher_id={localStorage.getItem('id')}&location=portugal&age_range=youth</code>
+                    <code>http://ads-api-mixit.deti/v1/ads?publisher_id={localStorage.getItem('id')}&location=portugal&age_range=youth</code>
                 </Typography>
                 <Typography sx={{ color: 'text.secondary', mb: 2 }}>
                     The response will be a JSON object with the following format:
