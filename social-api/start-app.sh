@@ -2,7 +2,7 @@
 
 set -e
 
-/wait-for-rabbitmq.sh rabbitmq_service
+/wait-for-rabbitmq.sh rabbitmq
 /wait-for-graylog.sh graylog
 
 echo "Starting app"

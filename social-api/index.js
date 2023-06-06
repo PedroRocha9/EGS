@@ -5,6 +5,7 @@ const swaggerUI = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const cors = require('cors');
 const path = require('path');
+const prometheus = require('prom-client');
 require('dotenv').config();
 
 const static = require('./static');
@@ -12,15 +13,20 @@ const package = require('./package.json');
 
 const PORT = process.env.PORT || static.PORT;
 const IP = process.env.IP || "127.0.0.1";
-const PROTOCOL = process.env.IP ? "https" : "http";
-const URL = PROTOCOL + "://" + IP + ":" + (process.env.PORT ? process.env.PORT : PORT);
+const PROTOCOL = process.env.PROTOCOL ? "https" : "http";
+// const URL = PROTOCOL + "://" + IP + ":" + (process.env.PORT ? process.env.PORT : PORT);
+const URL = "http://app-egs-mixit.deti:80";
 
 
 // Expose public content
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Enable Cors Middleware
-app.use(cors({origin:true,credentials: true}));
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.options('*', cors());
 
 // Setup Swagger Docs
@@ -50,6 +56,12 @@ app.get('/', (req, res) => {
   res.redirect('/v1/docs'); 
 })
 
+app.get('/v1/docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swagger_specs);
+});
+
+
 // Setup routes
 fs.readdir(static.ROUTES_DIR, (err, files) => {
   files.forEach(file => app.use(`/v1/${file.replace(".js", "")}`, require(static.ROUTES_DIR + file.replace(".js", ""))));
@@ -64,6 +76,18 @@ fs.readdir(static.ROUTES_DIR, (err, files) => {
     
     return;
   });
+});
+
+// Metrics endpoint
+app.get('/metrics', async (req, res) => {
+  try {
+    const metrics = await prometheus.register.metrics();
+    res.set('Content-Type', prometheus.register.contentType);
+    res.send(metrics);
+  } catch (error) {
+    console.error('Error generating metrics:', error);
+    res.status(500).send('Error generating metrics');
+  }
 });
 
 // Startup Message
