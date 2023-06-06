@@ -8,8 +8,8 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-// Replace <your_mongodb_connection_string> with your MongoDB connection string
-mongoose.connect('<your_mongodb_connection_string>', {
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/mydatabase', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
