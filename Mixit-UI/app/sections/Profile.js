@@ -8,6 +8,8 @@ function Profile({navigation}) {
     const [tweets, setTweets] = useState([]);
     const [uuid, setUuid] = useState(null);
     const [loading, setLoading] = useState(true); // Introduce loading state
+    const [user, setUser] = useState(null); // Introduce user state
+    const [profileImageUrl, setProfileImageUrl] = useState(null);
 
     const handleLogout = async () => {
         // Clear the MixitId from AsyncStorage
@@ -21,8 +23,30 @@ function Profile({navigation}) {
     };
 
     useEffect(() => {
+        if (uuid) {
+            const url = `http://social-api-mixit.deti/v1/posts/users/${uuid}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    setTweets(data.data);
+                    // Extract image URL from the first tweet (if it exists) and save it in state
+                    const firstTweetImageUrl = data.data[0]?.author_info.profile_image;
+                    setProfileImageUrl(firstTweetImageUrl);
+                    setLoading(false); // After fetching data, set loading to false
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    setLoading(false); // Even in case of error, set loading to false
+                });
+        }
+    }, [uuid]);
+    
+
+    useEffect(() => {
         const fetchUUID = async () => {
             const id = await AsyncStorage.getItem('@MixitId');
+            console.log("[Profile] Mixit ID: " + id);
             setUuid(id);
         };
 
@@ -37,6 +61,30 @@ function Profile({navigation}) {
                 .then(response => response.json())
                 .then(data => {
                     setTweets(data.data);
+                    setLoading(false); // After fetching data, set loading to false
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    setLoading(false); // Even in case of error, set loading to false
+                });
+        }
+    }, [uuid]);
+
+    useEffect(() => {
+        if (uuid) {
+            const url = `http://social-api-mixit.deti/v1/users/${uuid}?user.fields=public_metrics`;
+            
+            // "public_metrics": {
+                //   "followers_count": 6520351,
+                //   "following_count": 4624
+                // }
+                
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    setUser(data);
+
                     setLoading(false); // After fetching data, set loading to false
                 })
                 .catch(error => {
@@ -63,14 +111,15 @@ function Profile({navigation}) {
 
             <View style={styles.topContainer}>  
                 <View style={styles.profileInfoContainer}>
-                    <Image source={require('../assets/profile-placeholder.png')} style={styles.profilePic} />
+                <Image source={profileImageUrl ? { uri: profileImageUrl } : require('../assets/profile-placeholder.png')} style={styles.profilePic} />
+
                     <View style={styles.profileInfo}>
-                        <Text style={styles.nameText}>John Doe</Text>
-                        <Text style={styles.handlerText}>@johndoe</Text>
-                        <View style={styles.locationContainer}>
-                            <Image source={require('../assets/location.png')} style={styles.locationIcon} />
-                            <Text style={styles.locationText}>New York, USA</Text>
-                        </View>
+                        <Text style={styles.nameText}>{user?.data.name}</Text>
+                        
+                        <Text style={styles.handlerText}>Mixit handler: @{user?.data.username}</Text>
+
+                        <Text style={styles.metricsText}>Followers: {user?.data.public_metrics.followers_count} | Following: {user?.data.public_metrics.following_count}</Text>
+
                     </View>
                 </View>
 
@@ -201,6 +250,11 @@ const styles = StyleSheet.create({
     },
     tweetContainer: {
         marginBottom: 10,
+    },
+    metricsText: {
+        color: '#dbdbdb',
+        fontSize: 12,
+        marginBottom: 15 ,
     },
 });
 

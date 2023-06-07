@@ -21,10 +21,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.jp_amaral.MixitUI"
     },
     "web": {
       "favicon": "./app/assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e285176a-bf73-44e8-8351-55c201fc1b91"
+      }
     }
   }
 }
