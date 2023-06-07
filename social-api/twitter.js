@@ -143,7 +143,7 @@ const fetchTimelineFromTwitter = async (id, next_token) => {
 
     // Iterate over tweets
     for (let i = 0; i < homeTimeline.data.data.length; i++) {
-      homeTimeline.data.data[i] = await parseTweetsData(homeTimeline.data.data[i], homeTimeline, false);
+      homeTimeline.data.data[i] = await parseTweetsData(homeTimeline.data.data[i], homeTimeline, false, true);
     }
 
     // Remove unwanted meta information
@@ -247,7 +247,7 @@ const fetchTweetLikingUsersFromTwitter = async (id, query, next_token) => {
   }
 }
 
-const parseTweetsData = async (tweet, tweetBase, original) => {
+const parseTweetsData = async (tweet, tweetBase, original, timeline=false) => {
   try {
     if ('attachments' in tweet) {
       tweet.attachments.media_keys.forEach(key => {
@@ -285,17 +285,23 @@ const parseTweetsData = async (tweet, tweetBase, original) => {
       delete tweet.referenced_tweets;
     }
     
-    tweet.author_info = {};
-    tweet.author_info.username = tweetBase.includes.users[0].username;
-    tweet.author_info.name = tweetBase.includes.users[0].name;
-    tweet.author_info.profile_image = tweetBase.includes.users[0].profile_image_url;
+    if (!timeline) {
+      tweet.author_info = {};
+      tweet.author_info.username = tweetBase.includes.users[0].username;
+      tweet.author_info.name = tweetBase.includes.users[0].name;
+      tweet.author_info.profile_image = tweetBase.includes.users[0].profile_image_url;
+    } else {
+      // Search for author info in includes
+      tweet.author_info = {};
+      tweet.author_info.username = tweetBase.includes.users.find(user => user.id === tweet.author_id).username;
+      tweet.author_info.name = tweetBase.includes.users.find(user => user.id === tweet.author_id).name;
+      tweet.author_info.profile_image = tweetBase.includes.users.find(user => user.id === tweet.author_id).profile_image_url;
+    }
   
     delete tweet.author_id;
     delete tweet.edit_history_tweet_ids;
     delete tweet.attachments;
   
-    // console.log('tweet');
-    // console.log(tweet);
     return tweet;
   } catch (error) {
     console.log('Twitter API had an error while fetching info', error);

@@ -395,7 +395,7 @@ const handlePostLikingUsersResponse = async (req, res) => {
 const invalidUserHandler = async (req, res, param) => {
   try {
     // if param is username and the value doesnt match the regex ^[A-Za-z0-9_]{1,15}$, return error
-    if (param === "username" && !req.params[param].match(/^[A-Za-z0-9_]{1,15}$/)) throw new Error("Invalid username");
+    if (param === "username" && !req.params[param].match(/^[A-Za-z0-9_]{1,64}$/)) throw new Error("Invalid username");
 
     // if param is uuid and the value contains letters, return error
     if (param === "uuid" && !req.params[param].match(/^[0-9]+$/)) throw new Error("Invalid uuid");

@@ -521,7 +521,7 @@ spec:
         options:
           - name: ndots
             value: "1"
-#Ads API service
+# Ads API service
 ---
 apiVersion: v1
 kind: Service
@@ -545,7 +545,7 @@ metadata:
   name: ads-platform
   namespace: egs-mixit
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: ads-platform
@@ -587,6 +587,7 @@ metadata:
   name: auth-backend
   namespace: egs-mixit
 spec:
+  replicas: 2
   selector:
     matchLabels:
       app: auth-backend
