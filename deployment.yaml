@@ -80,7 +80,7 @@ spec:
 # MongoDB deployment
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: mongodb
   namespace: egs-mixit
@@ -579,6 +579,47 @@ spec:
       port: 80
       targetPort: 8090
 
+# Authentication Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-backend
+  namespace: egs-mixit
+spec:
+  selector:
+    matchLabels:
+      app: auth-backend
+  template:
+    metadata:
+      labels:
+        app: auth-backend
+    spec:
+      containers:
+      - name: auth-backend
+        image: registry.deti:5000/98372/auth-backend:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5019
+      dnsConfig:
+        options:
+        - name: ndots
+          value: "1"  
+# Authentication Service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-backend
+  namespace: egs-mixit
+spec:
+  selector:
+    app: auth-backend
+  ports:
+  - protocol: TCP
+    port: 5019
+    targetPort: 5019
+
 
 # Traefik deployment
 ---
@@ -644,3 +685,13 @@ spec:
             name: grafana
             port: 
               number: 3002
+  - host: mixit-egs.duckdns.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-backend
+            port: 
+              number: 5019
