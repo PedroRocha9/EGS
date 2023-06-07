@@ -1,8 +1,14 @@
 import React from 'react';
-import { StyleSheet, Image, Text, View, TouchableOpacity, StatusBar} from 'react-native';
-import { WebView } from 'react-native-webview';
+import { StyleSheet, Image, Text, View, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
+import Tweet from '../components/Tweet';
 
 function Profile(props) {
+    const tweets = [
+        { user: "@johndoe", text: "Just had the best pizza ever 🍕😍", imageUrl: "https://picsum.photos/400/300" },
+        { user: "@janedoe", text: "Can't wait for the weekend!" },
+        { user: "@jack", text: "Excited to announce the launch of our new app! 🎉📱", imageUrl: "https://picsum.photos/400/300" },
+        { user: "@jack", text: "Is it friday already?" },
+    ];
     return (
         <View style={styles.container}>
             <View style={styles.containerTopBar}>      
@@ -37,7 +43,13 @@ function Profile(props) {
             </View>
 
             <View style={styles.webviewContainer}>
-                <WebView source={{ uri: 'https://www.google.com/' }} />
+            <ScrollView style={styles.tweets}>
+                {tweets.map((tweet, index) => (
+                    <View key={index} style={styles.tweetContainer}>
+                        <Tweet user={tweet.user} text={tweet.text} imageUrl={tweet.imageUrl} />
+                    </View>
+                ))}
+            </ScrollView>
             </View>
         </View>
     );
@@ -129,7 +141,15 @@ const styles = StyleSheet.create({
     },
     webviewContainer: {
         flex: 1,
-        marginTop: 10,
+        backgroundColor: '#2d2d2d',
+    },
+    tweets: {
+        flex: 1,
+        marginTop: 20,
+        paddingHorizontal: 10,
+    },
+    tweetContainer: {
+        marginBottom: 10,
     },
 });
 

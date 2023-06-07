@@ -1,24 +1,114 @@
-import React, {useState} from 'react'
-import { StyleSheet, TouchableOpacity, Text, TextInput, View, Image, StatusBar, Button, Modal } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import { WebView } from 'react-native-webview';
+import React, { useState } from "react";
+import { Alert, StyleSheet, TouchableOpacity, Text, TextInput, View, Image, StatusBar, Button, Modal } from "react-native";
+import Icon from "react-native-vector-icons/FontAwesome";
+import { WebView } from "react-native-webview";
+import { Linking } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-function Login({navigation}) {
 
-    const [showWebView, setShowWebView] = useState(false);
-    const [authUrl, setAuthUrl] = useState(''); // hold url to authenticate
-  
-    const handleAuth = (url) => {
-      setAuthUrl(url);
-      setShowWebView(true);
-      setTimeout(() => {
+function Login({ navigation }) {
+  const [showWebView, setShowWebView] = useState(false);
+  // hold url to authenticate
+  const [authUrl, setAuthUrl] = useState(""); 
+  const [token, setToken] = useState(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const parseUrl = (url) => {
+    const match = url.match(/^http[s]?:\/\/([^:]+):(\d+)(\/.*)?$/);
+    if (match) {
+      const hostName = match[1];
+      const port = match[2];
+      return { hostName, port };
+    }
+    return {};
+  };
+
+  const handleNavigationChange = ({ url }) => {
+    const { hostName, port } = parseUrl(url);
+
+    if (hostName === "127.0.0.1" && port === "5100") {
+      const tokenMatch = url.match(/token=([^&]+)/);
+      const token = tokenMatch && tokenMatch[1];
+
+      if (token) {
+        setToken(token);
+        if (token === null) {
+            console.log("Token is null");
+        }
+        console.log("Token: " + token);
         setShowWebView(false);
-      }, 5000);  // Close WebView after 5 seconds
-    };
+      }
+    }
+  };
+
+  const handleLogin = async () => {
+    const response = await fetch("http://mixit-egs.duckdns.org/loginSubmit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username,
+        password,
+      }),
+    });
   
-    const handleGoogleAuth = () => handleAuth('https://google.com/');
-    const handleGithubAuth = () => handleAuth('https://github.com/');
+    const data = await response.json();
+    try {
+      if (response.ok) {
+        setToken(data.token);  // if the server sends back a token
   
+        // fetch request to get the Mixit ID
+        const mixitResponse = await fetch(`http://social-api-mixit.deti/v1/users/by/username/${username}`);
+        const mixitData = await mixitResponse.json();
+        
+        if (mixitResponse.ok) {
+            if (mixitData && mixitData.data && mixitData.data.uuid) {
+                const mixitId = mixitData.data.uuid;  // Get Mixit ID from the response
+                console.log("[LOGIN] Mixit ID: ", mixitId);
+        
+                // Save the MixitID to AsyncStorage
+                AsyncStorage.setItem('@MixitId', mixitId).catch((error) => {
+                  console.error("AsyncStorage error: ", error);
+                });
+        
+                navigation.navigate("Home", { 
+                    screen: "Timeline",
+                    params: { mixitId: mixitId },  // Pass Mixit ID as parameter
+                });
+            } else {
+                console.error("Error getting Mixit ID: Invalid data structure", mixitData);
+            }
+        } else {
+            console.error("Error getting Mixit ID:", mixitData.message);
+        }
+        
+        navigation.navigate("Home", { screen: "Timeline" });
+        Alert.alert("Login successful!");
+      } else if (!response.ok) {
+        // The request failed - handle the error
+        console.error("Error:", data.message);
+        Alert.alert("Login failed!", data.message);
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      Alert.alert("Network error", "Please check your internet connection and try again.");
+    }
+  };
+  
+
+  const handleAuth = (url) => {
+    setAuthUrl(url);
+    setShowWebView(true);
+    setTimeout(() => {
+      setShowWebView(false);
+    }, 50000000);
+  };
+
+  const handleGoogleAuth = () => handleAuth("https://mixit-egs.duckdns.org");
+  const handleGithubAuth = () => handleAuth("http://mixit-egs.duckdns.org/github");
+
     
     return (
         <View style={styles.containerGeneric}>
@@ -40,13 +130,12 @@ function Login({navigation}) {
                 <Image source={require('../assets/mixit_x.png')} style={styles.smallLogo}/>
                 
                 <Text style={styles.loginText}>Username</Text>
-                <TextInput style={styles.inputUser} placeholder="Username"/>
+                <TextInput style={styles.inputUser} placeholder="Username" value={username} onChangeText={setUsername}/>
                 
                 <Text style={[styles.passwordText, {marginTop: 20}]}>Password</Text>
-                <TextInput style={styles.inputPass} placeholder="Password" secureTextEntry={true}/>
+                <TextInput style={styles.inputPass} placeholder="Password" secureTextEntry={true} value={password} onChangeText={setPassword} />
                 
-                <TouchableOpacity style={styles.loginButton} 
-                onPress={() => navigation.navigate('Home', {screen: 'Timeline'})}>
+                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
                     <Text style={styles.loginButtonText}>Login</Text>
                 </TouchableOpacity>
 
@@ -65,9 +154,7 @@ function Login({navigation}) {
                         <WebView
                         source={{ uri: authUrl }} 
                         style={{ marginTop: 20 }}
-                        onNavigationStateChange={({ url }) => {
-                            // you can check url here to decide when to close the modal
-                        }}
+                        onNavigationStateChange={handleNavigationChange}
                         />
                         <Button title="Close" backgroundColor='#B9383A' onPress={() => setShowWebView(false)} />
                     </Modal>

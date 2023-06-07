@@ -1,76 +1,57 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, StyleSheet } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Image, TouchableOpacity, Text } from 'react-native';
+import  Icon  from 'react-native-vector-icons/MaterialIcons';
 
 function Add({ url }) {
     const [adImage, setAdImage] = useState("");
     const [adRedirect, setAdRedirect] = useState("");
 
     useEffect(() => {
-        fetch(url, {
+        fetch('http://ads-api-mixit.deti/v1/ads?publisher_id=2', {
             method: 'GET',
             headers: {
-                Accept: 'application/json',
                 'Content-Type': 'application/json',
             },
         })
-        .then((response) => response.json())
-        .then((responseJson) => {
-            setAdImage(responseJson.ad_creative);
-            console.log(responseJson.ad_creative);
-            //check if the key ad_redirect exists
-            if (responseJson.hasOwnProperty('ad_redirect')) {
-                setAdRedirect(responseJson.ad_redirect);
-                console.log(responseJson.ad_redirect);
-            }
+        .then((response) => {
+            response.json().then((data) => {
+                console.log(data);
+                setAdImage(data.ad_creative);
+                setAdRedirect(data.ad_redirect);
+            });
         })
         .catch((error) => {
             console.error(error);
-        });     
-    }, []);
-
-    const openUrl = (url) => {
-        if(url != "") {
-            Linking.openURL(url);
         }
-    }
-
-    if(adImage == "") {
-        return null;
-    }
+        );
+    }, [url]); // re-run effect when `url` changes
 
     return (
-        <TouchableOpacity onPress={() => openUrl(adRedirect)}>
-            <View style={styles.container}>
-                <Text style={styles.adtext}>Ad</Text>
-                <Image source={{ uri: adImage }} style={styles.image} />
+        <View style={styles.add}>
+          <TouchableOpacity onPress={() => console.log("Clicked on ad!")}>
+            <View style={styles.adContent}>
+              {adImage && <Image source={{ uri: adImage }} style={styles.image}/>}
             </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        backgroundColor: 'white',
-        height: 200,
-        width: '100%',
-        borderRadius: 10,
-    },
-    image: {
-        flex:1,
-        height: null,
-        resizeMode: 'contain',
-        width: null,
-    },
-    adtext: {
-        color: 'black',
-        fontSize:20,
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        backgroundColor:'gray'
-    }
-});
+const styles = {
+  add: {
+    backgroundColor: '#2d2d2d',
+    borderRadius: 10,
+    padding: 10,
+  },
+  adContent: {
+    marginBottom: 10,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    resizeMode: 'cover',
+  },
+};
 
 export default Add;

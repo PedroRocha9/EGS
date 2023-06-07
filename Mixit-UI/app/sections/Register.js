@@ -1,11 +1,130 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native';
-import { StyleSheet, TouchableOpacity, Text, TextInput, View, Image, StatusBar } from 'react-native';
+import { Alert, StyleSheet, TouchableOpacity, Text, TextInput, View, Image, StatusBar } from 'react-native';
+import CryptoJS from "crypto-js";
 
-//TODO
-// lots of things to do here -> access authentication service
+function hashUsername(username) {
+    const hash = CryptoJS.MD5(username).toString();
+    let numbers = '';
+    for (let i = 0; i < hash.length; i++) {
+        if (!isNaN(parseInt(hash[i]))) {
+            numbers += hash[i];
+        }
+        if (numbers.length === 5) {
+            break;
+        }
+    }
+    return numbers;
+}
+
 
 function Register({navigation}) {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('');
+    const [twitterId, setTwitterId] = useState(''); 
+
+    const handleRegister = async () => {
+        const uuid = hashUsername(username);
+
+        const socialEndpoint = `http://social-api-mixit.deti/v1/users/${uuid}?name=AmaralAndreViegasPedro&username=${username}&location=Portugal&twitter_id=${twitterId}`;
+
+        const socialResponse = await fetch(socialEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!socialResponse.ok){
+            Alert.alert(
+                "Registration Error",
+                "An error occurred while trying to register your account in Social API. Please try again.",
+                [
+                    { text: "OK", onPress: () => console.log("OK Pressed") }
+                ]
+            );
+            return;
+        }
+
+        // Continue with registration if social-api-mixit.deti request was successful
+        const endpoint = "http://mixit-egs.duckdns.org/registerSubmit";
+        const body = JSON.stringify({
+            username: username,
+            email: email,
+            password: password
+        });
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: body,
+        })
+        .then(async (response) => {
+            let json;
+        
+            // check if the response is JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.indexOf('application/json') !== -1) {
+                json = await response.json();  // Get JSON from the response
+            } else {
+                // If it's not JSON, just get the text from the response
+                const text = await response.text();
+                json = { message: text };
+            }
+        
+            console.log(json);
+        
+            if (response.ok) {
+                return json;
+            } else {
+                // Here, we throw the JSON object instead of the Error, so we can inspect it in the catch block
+                throw json;
+            }
+        })
+        .then((json) => {
+            Alert.alert(
+                "Registration Successful",
+                "Your account has been created successfully. You will be redirected to the login page.",
+                [
+                    { text: "OK", onPress: () => navigation.navigate('Login') }
+                ]
+            );
+        })
+        .catch((json) => {
+            // The error object should be the JSON we threw in the then block
+            console.error('Error:', json);
+            if (json.message === 'User already exists') {
+                Alert.alert(
+                    "Registration Error",
+                    "The user with this email already exists. Please try logging in instead.",
+                    [
+                        { text: "OK", onPress: () => console.log("OK Pressed") }
+                    ]
+                );
+            } else if (json.message === 'Register failed') {
+                Alert.alert(
+                    "Registration Error",
+                    "Registration failed. Please check your input data.",
+                    [
+                        { text: "OK", onPress: () => console.log("OK Pressed") }
+                    ]
+                );
+            } else {
+                Alert.alert(
+                    "Registration Error",
+                    "An error occurred while trying to register your account. Please try again.",
+                    [
+                        { text: "OK", onPress: () => console.log("OK Pressed") }
+                    ]
+                );
+            }
+        }); 
+        
+    };
+
     return (
         <View style={styles.containerGeneric}>
             <View style={styles.containerTopBar}>
@@ -21,25 +140,31 @@ function Register({navigation}) {
                 </TouchableOpacity>
             </View>
 
-            
-
             <View style={styles.containerRegisterArea}>
                 {/* Logo image */}
-                <Image source={require('../assets/mixit_x.png')} style={styles.smallLogo}/>
-                <Text style={styles.registerText}>Username</Text>
-                <TextInput style={styles.inputUser} placeholder="Username"/>
-                <Text style={[styles.passwordText, {marginTop: 20}]}>Password</Text>
-                <TextInput style={styles.inputPass} placeholder="Password" secureTextEntry={true}/>
-                <Text style={[styles.passwordText, {marginTop: 12}]}>Repeat Password</Text>
-                <TextInput style={styles.inputPass} placeholder="Repeat Password" secureTextEntry={true}/>
+            <Image source={require('../assets/mixit_x.png')} style={styles.smallLogo}/>
+            <Text style={styles.registerText}>Username</Text>
+            <TextInput style={styles.inputUser} placeholder="Username" onChangeText={text => setUsername(text)} value={username}/>
+            
+            <Text style={styles.registerText}>Email</Text>
+            <TextInput style={styles.inputUser} placeholder="Email" onChangeText={text => setEmail(text)} value={email}/>
+            
+            <Text style={styles.passwordText}>Password</Text>
+            <TextInput style={styles.inputPass} placeholder="Password" secureTextEntry={true} onChangeText={text => setPassword(text)} value={password}/>
+            
+            <Text style={styles.passwordText}>Repeat Password</Text>
+            <TextInput style={styles.inputPass} placeholder="Repeat Password" secureTextEntry={true}/>
+            
+            <Text style={styles.registerText}>Twitter ID</Text>
+            <TextInput style={styles.inputUser} placeholder="Twitter ID" onChangeText={text => setTwitterId(text)} value={twitterId}/>
 
-                <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('Timeline')}>
-                    <Text style={styles.registerButtonText}>Register</Text>
-                </TouchableOpacity>
+            <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
+                <Text style={styles.registerButtonText}>Register</Text>
+            </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                    <Text style={styles.haveAccountText}>I already have an account!</Text>
-                </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.haveAccountText}>I already have an account!</Text>
+            </TouchableOpacity>
             </View>
         </View>
     );
@@ -101,7 +226,7 @@ const styles = StyleSheet.create({
     inputUser: {
         backgroundColor: '#FFF',
         width: 300,
-        height: 40,
+        height: 30,
         borderRadius: 10,
         marginBottom: 10,
         paddingLeft: 10,
@@ -110,7 +235,7 @@ const styles = StyleSheet.create({
     inputPass: {
         backgroundColor: '#FFF',
         width: 300,
-        height: 40,
+        height: 30,
         borderRadius: 10,
         marginBottom: 20,
         paddingLeft: 10,
@@ -118,7 +243,7 @@ const styles = StyleSheet.create({
     registerButton: {
         backgroundColor: '#B9383A',
         width: 300,
-        height: 40,
+        height: 30,
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',

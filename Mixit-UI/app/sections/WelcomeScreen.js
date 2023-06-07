@@ -1,7 +1,22 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { StyleSheet, Image, Text, View, TouchableOpacity} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function WelcomeScreen({navigation}) {
+    // to do --> mantain user logged in, if mixitId is not null, go to timeline
+    // useEffect(() => {
+    //     // Get the MixitID from AsyncStorage
+    //     AsyncStorage.getItem('@MixitId')
+    //       .then((id) => {
+    //         if (id !== null) {
+    //           setMixitId(id);
+    //           console.log("[TIMELINE] Mixit ID: " + id);
+    //         }
+    //       })
+    //       .catch((error) => {
+    //         console.error("AsyncStorage error: ", error);
+    //       });
+    //   }, []); 
 
     return (
         <View style={styles.container}>
