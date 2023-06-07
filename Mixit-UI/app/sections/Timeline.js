@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View, TouchableOpacity, Text, Image } from 'react-native';
+import { ScrollView, StyleSheet, View, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import Tweet from '../components/Tweet';
@@ -11,6 +10,7 @@ import logo from '../assets/mixit.png';
 function Timeline({ navigation }) { 
   const [mixitId, setMixitId] = useState(null); 
   const [timelineData, setTimelineData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Get the MixitID from AsyncStorage
@@ -21,7 +21,10 @@ function Timeline({ navigation }) {
           console.log("[TIMELINE] Mixit ID: " + id);
           fetch(`http://social-api-mixit.deti/v1/posts/${id}/timeline`)
             .then((response) => response.json())
-            .then((data) => setTimelineData(data.data))
+            .then((data) => {
+              setTimelineData(data.data);
+              setLoading(false);
+            })
             .catch((error) => console.error(error));
         }
       })
@@ -29,7 +32,14 @@ function Timeline({ navigation }) {
         console.error("AsyncStorage error: ", error);
       });
   }, []);
-  
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
   
   return (
     <View style={styles.container}>
@@ -42,11 +52,15 @@ function Timeline({ navigation }) {
       <ScrollView style={styles.tweets}>
         {timelineData.map((tweet, index) => (
           <React.Fragment key={tweet.id}>
-            <Tweet 
-              user={tweet.author_info.username} 
-              text={tweet.text} 
-              imageUrl={tweet.photo_urls ? tweet.photo_urls[0] : null} 
-            />
+          <Tweet 
+            user={tweet.author_info.username}
+            name={tweet.author_info.name} 
+            text={tweet.text} 
+            imageUrl={tweet.photo_urls ? tweet.photo_urls[0] : null} 
+            metrics={tweet.public_metrics}
+            avatar={tweet.author_info.profile_image}
+            originalTweet={tweet.referenced_tweet ? tweet.referenced_tweet.originalTweet : null}
+          />
             <View style={styles.separator}/>
             {index % 2 === 1 && (
               <>
@@ -83,7 +97,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   separator: {
-    height: 10,
+    borderBottomColor: 'gray',
+    borderBottomWidth: 1,
   },
   profile: {
     marginLeft: '90%',

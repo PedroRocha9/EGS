@@ -1,27 +1,64 @@
-import React from 'react';
-import { StyleSheet, Image, Text, View, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Image, Text, View, TouchableOpacity, StatusBar, ScrollView, ActivityIndicator } from 'react-native';
 import Tweet from '../components/Tweet';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Add from '../components/Add';
 
-function Profile(props) {
-    const tweets = [
-        { user: "@johndoe", text: "Just had the best pizza ever 🍕😍", imageUrl: "https://picsum.photos/400/300" },
-        { user: "@janedoe", text: "Can't wait for the weekend!" },
-        { user: "@jack", text: "Excited to announce the launch of our new app! 🎉📱", imageUrl: "https://picsum.photos/400/300" },
-        { user: "@jack", text: "Is it friday already?" },
-    ];
+function Profile({navigation}) {
+    const [tweets, setTweets] = useState([]);
+    const [uuid, setUuid] = useState(null);
+    const [loading, setLoading] = useState(true); // Introduce loading state
+
+    const handleLogout = async () => {
+        // Clear the MixitId from AsyncStorage
+        try {
+            await AsyncStorage.removeItem('@MixitId');
+            console.log("[Profile] Mixit ID cleared from storage");
+            navigation.replace('Welcome');
+        } catch (error) {
+            console.error("AsyncStorage error: ", error);
+        }
+    };
+
+    useEffect(() => {
+        const fetchUUID = async () => {
+            const id = await AsyncStorage.getItem('@MixitId');
+            setUuid(id);
+        };
+
+        fetchUUID();
+    }, []);
+
+    useEffect(() => {
+        if (uuid) {
+            const url = `http://social-api-mixit.deti/v1/posts/users/${uuid}`;
+        
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    setTweets(data.data);
+                    setLoading(false); // After fetching data, set loading to false
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    setLoading(false); // Even in case of error, set loading to false
+                });
+        }
+    }, [uuid]);
+    
+    if (loading) { // loading spinner
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#0000ff" />
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.containerTopBar}>      
-                {/* Search */}
-                <TouchableOpacity>
-                    <Image source={require('../assets/search.png')} style={styles.search}/>
-                </TouchableOpacity>
                 {/* Logo */}
                 <Image source={require('../assets/mixit_square.png')} style={styles.logo}/>
-                {/* Notifications */}
-                <TouchableOpacity>
-                    <Image source={require('../assets/notifications.png')} style={styles.notifications}/>
-                </TouchableOpacity>
             </View>
 
             <View style={styles.topContainer}>  
@@ -35,19 +72,33 @@ function Profile(props) {
                             <Text style={styles.locationText}>New York, USA</Text>
                         </View>
                     </View>
-            </View>
+                </View>
 
-                <TouchableOpacity style={styles.editButton}>
-                    <Text style={styles.editButtonText}>Edit Profile</Text>
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                    <Text style={styles.logoutButtonText}>Log out</Text>
                 </TouchableOpacity>
             </View>
 
             <View style={styles.webviewContainer}>
             <ScrollView style={styles.tweets}>
                 {tweets.map((tweet, index) => (
-                    <View key={index} style={styles.tweetContainer}>
-                        <Tweet user={tweet.user} text={tweet.text} imageUrl={tweet.imageUrl} />
-                    </View>
+                    <React.Fragment key={index}>
+                        <View style={styles.tweetContainer}>
+                        <Tweet 
+                            user={tweet.author_info.username}
+                            name={tweet.author_info.name} 
+                            text={tweet.text} 
+                            imageUrl={tweet.photo_urls ? tweet.photo_urls[0] : null} 
+                            avatar={tweet.author_info.profile_image} 
+                            metrics={tweet.public_metrics} 
+                        />
+                        </View>
+                        {index % 2 === 1 && (
+                            <>
+                                <Add  url="http://ads-api-mixit.deti/v1/ads?publisher_id=2"/>
+                            </>
+                        )}
+                    </React.Fragment>
                 ))}
             </ScrollView>
             </View>
@@ -128,13 +179,13 @@ const styles = StyleSheet.create({
         color: '#dbdbdb',
         fontSize: 14,
     },
-    editButton: {
+    logoutButton: {
         backgroundColor: '#B9383A',
         borderRadius: 5,
         paddingVertical: 5,
         paddingHorizontal: 10,
     },
-    editButtonText: {
+    logoutButtonText: {
         color: '#dbdbdb',
         fontSize: 14,
         fontWeight: 'bold',

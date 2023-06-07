@@ -3,20 +3,19 @@ import { StyleSheet, Image, Text, View, TouchableOpacity} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function WelcomeScreen({navigation}) {
-    // to do --> mantain user logged in, if mixitId is not null, go to timeline
-    // useEffect(() => {
-    //     // Get the MixitID from AsyncStorage
-    //     AsyncStorage.getItem('@MixitId')
-    //       .then((id) => {
-    //         if (id !== null) {
-    //           setMixitId(id);
-    //           console.log("[TIMELINE] Mixit ID: " + id);
-    //         }
-    //       })
-    //       .catch((error) => {
-    //         console.error("AsyncStorage error: ", error);
-    //       });
-    //   }, []); 
+    useEffect(() => {
+        // Get the MixitID from AsyncStorage
+        AsyncStorage.getItem('@MixitId')
+            .then((id) => {
+                if (id !== null) {
+                    console.log("[WelcomeScreen] Mixit ID: " + id);
+                    navigation.replace("Home", { screen: "Timeline" });
+                }
+            })
+            .catch((error) => {
+                console.error("AsyncStorage error: ", error);
+            });
+    }, [navigation]);  // Adding navigation to the dependency array
 
     return (
         <View style={styles.container}>

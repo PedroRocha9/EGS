@@ -15,7 +15,6 @@ function Add({ url }) {
         })
         .then((response) => {
             response.json().then((data) => {
-                console.log(data);
                 setAdImage(data.ad_creative);
                 setAdRedirect(data.ad_redirect);
             });

@@ -25,6 +25,17 @@ function Register({navigation}) {
     const [twitterId, setTwitterId] = useState(''); 
 
     const handleRegister = async () => {
+        if (!username.trim() || !password.trim() || !email.trim() || !twitterId.trim()) {
+            Alert.alert(
+                "Registration Error",
+                "Please fill in all fields.",
+                [
+                    { text: "OK", onPress: () => console.log("OK Pressed") }
+                ]
+            );
+            return;
+        }
+
         const uuid = hashUsername(username);
 
         const socialEndpoint = `http://social-api-mixit.deti/v1/users/${uuid}?name=AmaralAndreViegasPedro&username=${username}&location=Portugal&twitter_id=${twitterId}`;

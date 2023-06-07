@@ -1,14 +1,25 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import  Icon  from 'react-native-vector-icons/MaterialIcons';
+import { ActivityIndicator } from 'react-native';
 
-function Tweet({ user, text, imageUrl }) {
+function Tweet({ user, text, imageUrl, metrics = {}, avatar, name, originalTweet }) {
+  const displayUser = originalTweet ? originalTweet.author_info : {username: user, name: name, avatar: avatar};
+  
   return (
     <View style={styles.tweet}>
       <View style={styles.userInfo}>
-        <Icon name="person" size={20} style={styles.avatar}/>
-        <Text style={styles.username}>{user}</Text>
+        <Image source={{uri: displayUser.avatar}} style={styles.avatar}/>
+        <View>
+          <Text style={styles.username}>{displayUser.name}</Text>
+          <Text style={styles.username}>@{displayUser.username}</Text>
+        </View>
       </View>
+
+      {/* indication of retweet */}
+      {originalTweet && (
+        <Text style={styles.retweet}>Retweeted by @{user}</Text>
+      )}
 
       <View style={styles.tweetContent}>
         <Text style={styles.text}>{text}</Text>
@@ -16,27 +27,24 @@ function Tweet({ user, text, imageUrl }) {
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionButton} >
-            <Image source={require('../assets/thumbs-up.png')}/>
-        </TouchableOpacity>
+        <View style={styles.actionButton} >
+          <Icon name="favorite" size={20} color="#E5E9F0"/>
+          <Text style={styles.actionButtonText}>{metrics?.like_count || 0}</Text>
+        </View>
 
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionButtonText}>Dislike</Text>
-        </TouchableOpacity>
+        <View style={styles.actionButton}>
+          <Icon name="chat" size={20} color="#E5E9F0"/>
+          <Text style={styles.actionButtonText}>{metrics?.reply_count || 0}</Text>
+        </View>
 
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionButtonText}>Comment</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton}>
-           {/* Share icon */}
-           <Image source={require('../assets/share.png')} style={styles.share}/>
-        </TouchableOpacity>
+        <View style={styles.actionButton}>
+          <Icon name="autorenew" size={20} color="#E5E9F0"/>
+          <Text style={styles.actionButtonText}>{metrics?.retweet_count || 0}</Text>
+        </View>
       </View>
     </View>
   );
 }
-
 const styles = {
   tweet: {
     backgroundColor: '#2d2d2d',
@@ -49,9 +57,12 @@ const styles = {
     marginBottom: 10,
   },
   avatar: {
-    color: '#E5E9F0',
+    width: 40,
+    height: 40,
+    borderRadius: 20, // to make it circular
     marginRight: 10,
   },
+  
   username: {
     fontWeight: 'bold',
     fontSize: 16,
@@ -70,6 +81,11 @@ const styles = {
     borderRadius: 10,
     marginTop: 10,
     resizeMode: 'cover',
+  },
+  retweet: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 5,
   },
   actions: {
     flexDirection: 'row',
