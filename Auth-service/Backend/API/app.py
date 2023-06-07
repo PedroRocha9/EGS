@@ -12,15 +12,10 @@ import re
 from flask import Flask, render_template, url_for, redirect, jsonify
 from flask_bcrypt import Bcrypt
 from authlib.integrations.flask_client import OAuth
-
 from flask_cors import CORS, cross_origin
-
-# Python standard libraries
 import json
 import os
 import sqlite3
-
-# Third-party libraries
 from flask import Flask, redirect, request, url_for
 from flask_login import (
     LoginManager,
@@ -31,7 +26,6 @@ from flask_login import (
 )
 from oauthlib.oauth2 import WebApplicationClient
 import requests
-import gevent
 
 
 app = Flask(__name__)
@@ -64,7 +58,7 @@ GOOGLE_CLIENT_ID = "1024531629328-q5k5rjh7i55qbjjj5edv39capjorq1dh.apps.googleus
 client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "client_secret.json")
 flow = Flow.from_client_secrets_file(client_secrets_file=client_secrets_file,
                                         scopes=["https://www.googleapis.com/auth/userinfo.email","https://www.googleapis.com/auth/userinfo.profile","openid"],
-                                        redirect_uri="http://127.0.0.1:5000/callback"
+                                        redirect_uri="http://mixit-egs.duckdns.org/callback"
                                     )
                                         
 # let me use only http for now
@@ -134,7 +128,6 @@ def index():
 def login():
     authorization_url, state = flow.authorization_url()
     session["state"] = state
-    # return jsonify({"url": authorization_url})
     return redirect(authorization_url)
 
 @app.route("/callback")
@@ -162,6 +155,7 @@ def callback():
     hd = id_info.get('hd')
 
     user_info = jsonify({"email": email, "token": credentials._id_token})
+       
 
     # connection.execute('CREATE TABLE users (username TEXT, password TEXT, email TEXT,google_id TEXT,github_id TEXT)')
     # create a new user with the google id name and email
@@ -172,7 +166,7 @@ def callback():
         if cur.fetchone() is not None:
             # redirect to the http://127.0.0.1:5100 with email and token
             return redirect("http://127.0.0.1:5100/auth?email="+email+"&token="+credentials._id_token)
-                        
+            
         # if the user doesn't exist, add it to the database
         cur.execute("INSERT INTO users (username, password, email, google_id) VALUES (?,?,?,?)", (name, "google", email, sub))
         con.commit()
@@ -217,7 +211,6 @@ def register():
     data = request.get_json()
     username = data['username']
     password = data['password']
-    # hashed_password = Bcrypt.generate_password_hash(password).decode('utf-8')
     mail = data['email']
 
     with sqlite3.connect("database.db") as con:
@@ -239,5 +232,5 @@ def register():
            
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5019, debug=True)
     
